@@ -11,12 +11,12 @@ fn main() {
                 }),
                 ..Default::default()
             }),
-            PhysicsPlugins::default(),
+            PhysicsPlugins::default().with_length_unit(20.),
         ))
         .add_systems(Startup, gmtk::setup)
         .add_plugins(gmtk::player::PlayerPlugin)
         .add_plugins(gmtk::environment::EnvironmentPlugin)
-        .insert_resource(Gravity(Vec2::NEG_Y * 200.))
+        .insert_resource(Gravity(Vec2::NEG_Y * 1000.))
         .insert_resource(ClearColor(Color::BLACK))
         .run();
 }
