@@ -1,7 +1,7 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use crate::LevelDimensions;
+use crate::{LevelDimensions, modes::GoalReached, player::Player};
 
 pub struct EnvironmentPlugin;
 
@@ -34,22 +34,33 @@ impl EnvironmentPlugin {
     fn spawn_goal(mut commands: Commands, level_dimensions: Res<LevelDimensions>) {
         let size = vec2(level_dimensions.tile_size, level_dimensions.tile_size * 2.);
 
-        commands.spawn((
-            Goal,
-            Sprite {
-                color: Color::srgb(1.0, 1.0, 0.),
-                custom_size: Some(size),
-                ..Default::default()
-            },
-            CollisionEventsEnabled,
-            Sensor,
-            Collider::rectangle(size.x, size.y),
-            Transform::from_translation(
-                level_dimensions
-                    .grid_pos_to_pixels((level_dimensions.level_length - 10, 3), size)
-                    .extend(0.),
-            ),
-        ));
+        commands
+            .spawn((
+                Goal,
+                Sprite {
+                    color: Color::srgb(1.0, 1.0, 0.),
+                    custom_size: Some(size),
+                    ..Default::default()
+                },
+                CollisionEventsEnabled,
+                Sensor,
+                Collider::rectangle(size.x, size.y),
+                Transform::from_translation(
+                    level_dimensions
+                        .grid_pos_to_pixels((level_dimensions.level_length - 10, 3), size)
+                        .extend(0.),
+                ),
+            ))
+            .observe(
+                |trigger: Trigger<OnCollisionStart>,
+                 player_query: Query<(), With<Player>>,
+                 mut flag_event_writer: EventWriter<GoalReached>| {
+                    // if it's the player that collided, send the event
+                    if player_query.contains(trigger.collider) {
+                        flag_event_writer.write(GoalReached);
+                    }
+                },
+            );
     }
 }
 

@@ -10,12 +10,20 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(movement::PlayerMovementPlugin)
-            .add_systems(Startup, Self::spawn_player);
+            .add_event::<ResetPlayer>()
+            .add_systems(Startup, Self::spawn_player)
+            .add_systems(
+                Update,
+                Self::move_to_start_pos.run_if(on_event::<ResetPlayer>),
+            );
     }
 }
 /// Marker for the player character.
 #[derive(Debug, Component)]
 pub struct Player;
+
+#[derive(Debug, Event)]
+pub struct ResetPlayer;
 
 impl PlayerPlugin {
     fn spawn_player(
@@ -43,5 +51,14 @@ impl PlayerPlugin {
                     .extend(1.),
             ),
         ));
+    }
+
+    fn move_to_start_pos(
+        mut player: Single<&mut Transform, With<Player>>,
+        level_dimensions: Res<LevelDimensions>,
+    ) {
+        player.translation = level_dimensions
+            .grid_pos_to_pixels((1, 3), vec2(40., 80.))
+            .extend(1.);
     }
 }
