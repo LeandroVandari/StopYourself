@@ -7,7 +7,7 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Stop yourself".into(),
-                    resolution: WindowResolution::new(900., 600.),
+                    resolution: WindowResolution::new(1000., 600.),
                     ..Default::default()
                 }),
                 ..Default::default()

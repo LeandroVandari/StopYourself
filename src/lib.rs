@@ -26,7 +26,7 @@ impl SetupPlugin {
         commands.insert_resource(LevelDimensions {
             start: window.size().map(|dimension| -dimension / 2.),
             tile_size: 20.,
-            level_length: 50,
+            level_length: 75,
         });
     }
 }
