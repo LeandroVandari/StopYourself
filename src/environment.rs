@@ -1,5 +1,5 @@
 use avian2d::prelude::*;
-use bevy::{prelude::*, sprite::Anchor};
+use bevy::prelude::*;
 
 use crate::LevelStartPos;
 
