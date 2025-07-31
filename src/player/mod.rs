@@ -37,10 +37,10 @@ impl PlayerPlugin {
             Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
             ColliderDensity(2.0),
             GravityScale(1.5),
-            Transform::from_xyz(
-                level_dimensions.start.x + 40.,
-                level_dimensions.start.y + 80.,
-                0.0,
+            Transform::from_translation(
+                level_dimensions
+                    .grid_pos_to_pixels((1, 3), vec2(40., 80.))
+                    .extend(0.),
             ),
         ));
     }

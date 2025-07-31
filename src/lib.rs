@@ -8,7 +8,7 @@ pub mod player;
 pub struct SetupPlugin;
 
 #[derive(Debug, Resource)]
-struct LevelDimensions {
+pub struct LevelDimensions {
     start: Vec2,
     tile_size: f32,
     // length in tiles
@@ -29,5 +29,17 @@ impl SetupPlugin {
             tile_size: 20.,
             level_length: 200,
         });
+    }
+}
+
+impl LevelDimensions {
+    /// Uses top-left anchor (because the physics engine doesn't work with anchors, we need to do this manually).
+    /// If you want a center anchor, just pass Vec2::ZERO as the object_size.
+    pub fn grid_pos_to_pixels(&self, pos: (u32, u32), object_size: Vec2) -> Vec2 {
+        self.start
+            + vec2(
+                pos.0 as f32 * self.tile_size + object_size.x / 2.,
+                pos.1 as f32 * self.tile_size + object_size.y / 2.,
+            )
     }
 }
