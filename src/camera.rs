@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{environment, player::Player};
+use crate::{player::Player, LevelDimensions};
 
 pub struct CameraPlugin;
 /// How many tiles ahead of the player the camera should be.
@@ -22,9 +22,10 @@ impl CameraPlugin {
     fn follow_player(
         mut camera: Single<&mut Transform, (With<Camera2d>, Without<Player>)>,
         player: Single<&Transform, (With<Player>, Without<Camera2d>)>,
+        level_dimensions: Res<LevelDimensions>
     ) {
         let target_translation = vec3(
-            player.translation.x + environment::TILE_SIZE * CAMERA_AHEAD as f32,
+            player.translation.x + level_dimensions.tile_size * CAMERA_AHEAD as f32,
             0.,
             0.,
         );
