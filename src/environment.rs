@@ -1,5 +1,7 @@
 use avian2d::prelude::*;
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::prelude::*;
+
+use crate::LevelStartPos;
 
 pub struct EnvironmentPlugin;
 
@@ -17,9 +19,8 @@ impl EnvironmentPlugin {
         mut commands: Commands,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<ColorMaterial>>,
-        window: Query<&Window, With<PrimaryWindow>>,
+        level_start: Res<LevelStartPos>
     ) {
-        let window_size = window.iter().next().unwrap().size();
 
         commands.spawn((
             Mesh2d(meshes.add(Rectangle {
@@ -29,8 +30,8 @@ impl EnvironmentPlugin {
             RigidBody::Static,
             Collider::rectangle(TILE_SIZE * LEVEL_WIDTH as f32, TILE_SIZE),
             Transform::from_xyz(
-                -window_size.x / 2.,
-                -window_size.y / 2. + TILE_SIZE + 10.,
+                level_start.0.x,
+                level_start.0.y + TILE_SIZE + 10.,
                 0.0,
             ),
         ));
