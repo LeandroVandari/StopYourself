@@ -3,6 +3,7 @@ use bevy::{prelude::*, window::PrimaryWindow};
 pub mod camera;
 pub mod environment;
 pub mod player;
+pub mod modes;
 
 pub struct SetupPlugin;
 
@@ -16,7 +17,8 @@ struct LevelDimensions {
 
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, Self::level_dimensions);
+        app.add_systems(PreStartup, Self::level_dimensions)
+        .init_state::<modes::GameMode>();
     }
 }
 
