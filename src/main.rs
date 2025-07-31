@@ -13,8 +13,10 @@ fn main() {
             }),
             PhysicsPlugins::default(),
         ))
+        .add_systems(Startup, gmtk::setup)
         .add_plugins(gmtk::player::PlayerPlugin)
-        .insert_resource(Gravity(Vec2::NEG_Y * 100.))
+        .add_plugins(gmtk::environment::EnvironmentPlugin)
+        .insert_resource(Gravity(Vec2::NEG_Y * 200.))
         .insert_resource(ClearColor(Color::BLACK))
         .run();
 }

@@ -19,13 +19,13 @@ bevy = {workspace=true, features = [
     "bevy_log",
     "bevy_render",
     "std",
-   # "default_font"
-   # "bevy_scene"
-   # "bevy_audio"
-   # "bevy_ui",
-   # "bevy_text",
-   # "bevy_sprite",
-   # "bevy_asset",
+    "default_font",
+    "bevy_scene",
+    "bevy_audio",
+    "bevy_ui",
+    "bevy_text",
+    "bevy_sprite",
+    "bevy_asset",
     "tonemapping_luts",
     "dynamic_linking"]}
 

@@ -1,0 +1,1 @@
+Idea: You need to walk across a map. After you finish, go back and add an obstacle to stop your recorded motions. Then, pass that. and so on
