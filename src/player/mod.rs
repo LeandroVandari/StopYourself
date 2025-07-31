@@ -40,7 +40,7 @@ impl PlayerPlugin {
             Transform::from_translation(
                 level_dimensions
                     .grid_pos_to_pixels((1, 3), vec2(40., 80.))
-                    .extend(0.),
+                    .extend(1.),
             ),
         ));
     }
