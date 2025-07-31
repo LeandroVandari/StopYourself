@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use crate::{LevelDimensions, player::movement::CharacterControllerBundle};
 
 mod movement;
+mod record_movement;
 /// Player spawning and movement handling.
 pub struct PlayerPlugin;
 

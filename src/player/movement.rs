@@ -7,7 +7,7 @@ use avian2d::{
 };
 use bevy::prelude::*;
 
-use crate::player::Player;
+use crate::{modes::GameMode, player::Player};
 
 pub struct PlayerMovementPlugin;
 
@@ -16,7 +16,7 @@ impl Plugin for PlayerMovementPlugin {
         app.add_systems(
             FixedUpdate,
             (
-                Self::keyboard_input,
+                (Self::keyboard_input).run_if(in_state(GameMode::Survive)), // Only get the input if we're in the survive mode
                 Self::update_grounded,
                 Self::movement,
                 Self::apply_movement_damping,
@@ -27,7 +27,7 @@ impl Plugin for PlayerMovementPlugin {
     }
 }
 
-#[derive(Debug, Event)]
+#[derive(Debug, Event, Clone, Copy)]
 pub enum MovementAction {
     Move(Scalar),
     Jump,
@@ -111,7 +111,7 @@ impl CharacterControllerBundle {
 }
 
 impl PlayerMovementPlugin {
-    fn keyboard_input(
+    pub(crate) fn keyboard_input(
         mut movement_event_writer: EventWriter<MovementAction>,
         keyboard: Res<ButtonInput<KeyCode>>,
     ) {

@@ -28,4 +28,5 @@ bevy = { workspace = true, features = [
     "bevy_asset",
     "tonemapping_luts",
     "webgl2",
+    "dynamic_linking",
 ] }
