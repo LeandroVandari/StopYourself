@@ -7,3 +7,7 @@ Get the highest possible score by beating your level as many times as you can.
 
 ## Running
 The game uses the Bevy Game Engine. To run, clone the repository and simply `cargo run`.
+### Developing
+*Always* use the `dynamic_linking` feature. It dramatically speeds up compile times.
+### Compiling to wasm: 
+Follow https://bevy-cheatbook.github.io/platforms/wasm.html
