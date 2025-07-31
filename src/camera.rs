@@ -1,13 +1,15 @@
 use bevy::prelude::*;
 
-use crate::player::Player;
+use crate::{environment, player::Player};
 
 pub struct CameraPlugin;
+/// How many tiles ahead of the player the camera should be.
+const CAMERA_AHEAD: usize = 15;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.add_systems(Startup, Self::spawn_camera)
-        .add_systems(Update, Self::follow_player);
+            .add_systems(Update, Self::follow_player);
     }
 }
 
@@ -17,8 +19,15 @@ impl CameraPlugin {
     }
 
     /// Follow the player smoothly
-    fn follow_player(mut camera: Single<&mut Transform, (With<Camera2d>, Without<Player>)>, player: Single<&Transform, (With<Player>, Without<Camera2d>)>) {
-        let target_translation = player.translation;
+    fn follow_player(
+        mut camera: Single<&mut Transform, (With<Camera2d>, Without<Player>)>,
+        player: Single<&Transform, (With<Player>, Without<Camera2d>)>,
+    ) {
+        let target_translation = vec3(
+            player.translation.x + environment::TILE_SIZE * CAMERA_AHEAD as f32,
+            0.,
+            0.,
+        );
 
         let diff = target_translation - camera.translation;
         let diff_length = diff.length();
@@ -28,7 +37,6 @@ impl CameraPlugin {
 
         let dir = diff.clone().normalize();
 
-        camera.translation += dir*f32::min(10., diff_length) * Vec3::X;
-
+        camera.translation += dir * f32::min(10., diff_length);
     }
 }
