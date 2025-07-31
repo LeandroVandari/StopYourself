@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::PrimaryWindow};
 
 use crate::{LevelDimensions, player::Player};
 
@@ -23,9 +23,16 @@ impl CameraPlugin {
         mut camera: Single<&mut Transform, (With<Camera2d>, Without<Player>)>,
         player: Single<&Transform, (With<Player>, Without<Camera2d>)>,
         level_dimensions: Res<LevelDimensions>,
+        main_window: Single<&Window, With<PrimaryWindow>>,
     ) {
         let target_translation = vec3(
-            player.translation.x + level_dimensions.tile_size * CAMERA_AHEAD as f32,
+            (player.translation.x + level_dimensions.tile_size * CAMERA_AHEAD as f32)
+                .max(level_dimensions.start.x + main_window.size().x / 2.)
+                .min(
+                    level_dimensions.start.x
+                        + level_dimensions.tile_size * level_dimensions.level_length as f32
+                        - main_window.size().x / 2.,
+                ),
             0.,
             0.,
         );
