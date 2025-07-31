@@ -1,5 +1,5 @@
 use avian2d::prelude::*;
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowResolution};
 
 fn main() {
     App::new()
@@ -7,6 +7,7 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Stop yourself".into(),
+                    resolution: WindowResolution::new(900., 600.),
                     ..Default::default()
                 }),
                 ..Default::default()
