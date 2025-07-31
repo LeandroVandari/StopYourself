@@ -30,9 +30,10 @@ impl RecordMovementPlugin {
         frame_counter: Res<FrameCount>,
     ) {
         for movement in movement_event_reader.read() {
+            let frame_from_start = frame_counter.0 - recorded_movements.frame_start;
             recorded_movements
                 .movements
-                .push((frame_counter.0, *movement))
+                .push((frame_from_start, *movement))
         }
     }
 }
