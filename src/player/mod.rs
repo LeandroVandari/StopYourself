@@ -1,7 +1,7 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use crate::player::movement::CharacterControllerBundle;
+use crate::{player::movement::CharacterControllerBundle, LevelStartPos};
 
 mod movement;
 /// Player spawning and movement handling.
@@ -22,6 +22,7 @@ impl PlayerPlugin {
         mut commands: Commands,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<ColorMaterial>>,
+        level_start: Res<LevelStartPos>
     ) {
         commands.spawn((
             // Appearance
@@ -36,7 +37,7 @@ impl PlayerPlugin {
             Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
             ColliderDensity(2.0),
             GravityScale(1.5),
-            Transform::from_xyz(0.0, 0.0, 0.0),
+            Transform::from_xyz(level_start.0.x+40., level_start.0.y+80., 0.0),
         ));
     }
 }

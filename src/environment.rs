@@ -10,7 +10,7 @@ const LEVEL_WIDTH: usize = 200;
 
 impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, Self::spawn_map);
+        app.add_systems(Startup, Self::spawn_map);
     }
 }
 
