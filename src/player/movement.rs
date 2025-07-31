@@ -5,9 +5,12 @@ use avian2d::{
     math::{AdjustPrecision, Scalar, Vector},
     prelude::*,
 };
-use bevy::prelude::*;
+use bevy::{diagnostic::FrameCount, prelude::*};
 
-use crate::{modes::GameMode, player::Player};
+use crate::{
+    modes::GameMode,
+    player::{Player, record_movement::RecordedMovements},
+};
 
 pub struct PlayerMovementPlugin;
 
@@ -17,6 +20,7 @@ impl Plugin for PlayerMovementPlugin {
             FixedUpdate,
             (
                 (Self::keyboard_input).run_if(in_state(GameMode::Survive)), // Only get the input if we're in the survive mode
+                Self::play_recorded_input.run_if(in_state(GameMode::Replay)), // Else play whatever is recorded
                 Self::update_grounded,
                 Self::movement,
                 Self::apply_movement_damping,
@@ -111,6 +115,21 @@ impl CharacterControllerBundle {
 }
 
 impl PlayerMovementPlugin {
+    fn play_recorded_input(
+        mut movement_event_writer: EventWriter<MovementAction>,
+        mut recorded_movement: ResMut<RecordedMovements>,
+        frame: Res<FrameCount>,
+    ) {
+        let curr_frame = frame.0;
+        while let Some(first_movement) = recorded_movement.movements.front() {
+            if curr_frame - recorded_movement.frame_start < first_movement.0 {
+                break;
+            }
+            movement_event_writer.write(first_movement.1);
+            recorded_movement.movements.pop_front();
+        }
+    }
+
     pub(crate) fn keyboard_input(
         mut movement_event_writer: EventWriter<MovementAction>,
         keyboard: Res<ButtonInput<KeyCode>>,
