@@ -7,5 +7,5 @@ pub enum GameMode {
     #[default]
     Survive,
     /// Place defenses to stop your replay from getting to the goal
-    Defend
+    Defend,
 }
