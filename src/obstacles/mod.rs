@@ -15,6 +15,10 @@ pub enum ObstacleType {
 #[derive(Debug, Component)]
 pub struct ObstacleMarker;
 
+/// mark the last inserted obstacle to allow the player to move it
+#[derive(Debug, Component)]
+pub struct LastInsertedObstacle;
+
 /// Ghost obstacle, for an obstacle that's not placed yet.
 #[derive(Debug, Component)]
 pub struct GhostObstacle;
@@ -134,9 +138,15 @@ impl ObstaclePlugin {
         mut commands: Commands,
         ghost_obs: Single<Entity, With<GhostObstacle>>,
         mut state: ResMut<NextState<GameMode>>,
+        previous_last_obstacle: Single<Entity, With<LastInsertedObstacle>>,
     ) {
+        commands
+            .entity(previous_last_obstacle.into_inner())
+            .remove::<LastInsertedObstacle>();
+
         let mut obs_entity = commands.entity(ghost_obs.into_inner());
         obs_entity.remove::<GhostObstacle>();
+        obs_entity.insert(LastInsertedObstacle);
         // Doing this straight after placing the object for now, but we probably want to allow them to
         // change the placement and start a replay by pressing space or something
         state.set(GameMode::Replay)

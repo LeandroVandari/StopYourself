@@ -43,7 +43,7 @@ pub struct Grounded;
 
 /// The acceleration used for character movement.
 #[derive(Component, Debug)]
-pub struct MovementAcceleration(Scalar);
+pub struct MovementAcceleration(pub Scalar);
 
 /// The damping factor used for slowing down movement.
 #[derive(Component, Debug)]
@@ -51,7 +51,7 @@ pub struct MovementDampingFactor(Scalar);
 
 /// The strength of a jump.
 #[derive(Component, Debug)]
-pub struct JumpImpulse(Scalar);
+pub struct JumpImpulse(pub Scalar);
 
 #[derive(Debug, Bundle)]
 pub struct CharacterControllerBundle {
