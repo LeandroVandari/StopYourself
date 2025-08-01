@@ -112,7 +112,10 @@ impl PlayerPlugin {
                 state.set(GameMode::Survive);
             }
             GameMode::Defend => {
-                error!("Player should not die in the defend game mode.")
+                warn!(
+                    "Player should not die in the defend game mode. This probably happened because they touched the flag and something killed them at the same time."
+                );
+                return;
             }
         }
         recorded_moves.movements.clear();
