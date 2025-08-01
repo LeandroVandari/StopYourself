@@ -93,6 +93,7 @@ impl ObstaclePlugin {
                                 let spike = trigger.target();
                                 // If we're still placing the spike
                                 if ghost_query.contains(spike) {
+                                    println!("ghost query working");
                                     return;
                                 }
 

@@ -1,7 +1,8 @@
 use bevy::{diagnostic::FrameCount, prelude::*};
 
 use crate::{
-    environment::ResetEnvironment, obstacles::SpawnGhostObstacleEvent,
+    environment::ResetEnvironment,
+    obstacles::{GhostObstacle, LastInsertedObstacle, SpawnGhostObstacleEvent},
     player::record_movement::RecordedMovements,
 };
 
@@ -26,8 +27,7 @@ impl Plugin for ModesManagement {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (Self::change_to_defend
-                .run_if(on_event::<GoalReached>.and(in_state(GameMode::Survive))),),
+            (Self::handle_goal_reached.run_if(on_event::<GoalReached>),),
         )
         .add_systems(OnEnter(GameMode::Replay), Self::replay)
         .init_state::<GameMode>()
@@ -36,14 +36,35 @@ impl Plugin for ModesManagement {
 }
 
 impl ModesManagement {
-    fn change_to_defend(
+    fn handle_goal_reached(
+        mut commands: Commands,
+        curr_state: Res<State<GameMode>>,
         mut state: ResMut<NextState<GameMode>>,
         mut reset_environment: EventWriter<ResetEnvironment>,
         mut spawn_obstacle_writer: EventWriter<SpawnGhostObstacleEvent>,
+
+        last_placed_object: Option<Single<Entity, With<LastInsertedObstacle>>>,
     ) {
         reset_environment.write(ResetEnvironment);
-        spawn_obstacle_writer.write(SpawnGhostObstacleEvent::random());
         state.set(GameMode::Defend);
+
+        match curr_state.get() {
+            GameMode::Survive => {
+                spawn_obstacle_writer.write(SpawnGhostObstacleEvent::random());
+            }
+            GameMode::Replay => {
+                commands
+                    .entity(
+                        last_placed_object
+                            .expect("If we're in replay mode an obstacle was already placed.")
+                            .into_inner(),
+                    )
+                    .insert(GhostObstacle);
+            }
+            GameMode::Defend => {
+                warn!("Shouldn't reach goal in the defend game mode...")
+            }
+        }
     }
 
     fn replay(mut recorded_movements: ResMut<RecordedMovements>, frame: Res<FrameCount>) {
