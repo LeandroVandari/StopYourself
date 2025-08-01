@@ -32,6 +32,10 @@ impl RecordMovementPlugin {
         frame_counter: Res<FrameCount>,
     ) {
         for movement in movement_event_reader.read() {
+            // Start counting from the first move
+            if recorded_movements.movements.is_empty() {
+                recorded_movements.frame_start = frame_counter.0;
+            }
             let frame_from_start = frame_counter.0 - recorded_movements.frame_start;
             recorded_movements
                 .movements

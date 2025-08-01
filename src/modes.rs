@@ -1,8 +1,8 @@
 use bevy::{diagnostic::FrameCount, prelude::*};
 
 use crate::{
-    obstacles::SpawnGhostObstacleEvent,
-    player::{ResetPlayer, record_movement::RecordedMovements},
+    environment::ResetEnvironment, obstacles::SpawnGhostObstacleEvent,
+    player::record_movement::RecordedMovements,
 };
 
 /// The two modes for the game
@@ -38,10 +38,10 @@ impl Plugin for ModesManagement {
 impl ModesManagement {
     fn change_to_defend(
         mut state: ResMut<NextState<GameMode>>,
-        mut reset_player: EventWriter<ResetPlayer>,
+        mut reset_environment: EventWriter<ResetEnvironment>,
         mut spawn_obstacle_writer: EventWriter<SpawnGhostObstacleEvent>,
     ) {
-        reset_player.write(ResetPlayer);
+        reset_environment.write(ResetEnvironment);
         spawn_obstacle_writer.write(SpawnGhostObstacleEvent::random());
         state.set(GameMode::Defend);
     }
