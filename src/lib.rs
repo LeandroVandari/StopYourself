@@ -3,6 +3,7 @@ use bevy::{prelude::*, window::PrimaryWindow};
 pub mod camera;
 pub mod environment;
 pub mod modes;
+pub mod obstacles;
 pub mod player;
 
 pub struct SetupPlugin;

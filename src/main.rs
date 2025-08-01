@@ -20,6 +20,7 @@ fn main() {
             gmtk::environment::EnvironmentPlugin,
             gmtk::camera::CameraPlugin,
             gmtk::modes::ModesManagement,
+            gmtk::obstacles::ObstaclePlugin,
         ))
         .insert_resource(Gravity(Vec2::NEG_Y * 1000.))
         .insert_resource(ClearColor(Color::BLACK))
