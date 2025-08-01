@@ -13,6 +13,7 @@ fn main() {
                 ..Default::default()
             }),
             PhysicsPlugins::default().with_length_unit(20.),
+            bevy_framepace::FramepacePlugin,
         ))
         .add_plugins((
             gmtk::SetupPlugin,
