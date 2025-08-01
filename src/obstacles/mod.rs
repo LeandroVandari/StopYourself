@@ -138,11 +138,14 @@ impl ObstaclePlugin {
         mut commands: Commands,
         ghost_obs: Single<Entity, With<GhostObstacle>>,
         mut state: ResMut<NextState<GameMode>>,
-        previous_last_obstacle: Single<Entity, With<LastInsertedObstacle>>,
+        previous_last_obstacle: Option<Single<Entity, With<LastInsertedObstacle>>>,
     ) {
-        commands
-            .entity(previous_last_obstacle.into_inner())
-            .remove::<LastInsertedObstacle>();
+        info!("Placing the ghost obstacle");
+        if let Some(obs) = previous_last_obstacle {
+            commands
+                .entity(obs.into_inner())
+                .remove::<LastInsertedObstacle>();
+        }
 
         let mut obs_entity = commands.entity(ghost_obs.into_inner());
         obs_entity.remove::<GhostObstacle>();
