@@ -57,11 +57,14 @@ impl ObstaclePlugin {
         mut commands: Commands,
         mut obstacle_event: EventReader<SpawnGhostObstacleEvent>,
         window: Single<&Window, With<PrimaryWindow>>,
-        camera: Single<&Transform, With<Camera2d>>,
+        camera: Single<(&Camera, &GlobalTransform, &Transform), With<Camera2d>>,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<ColorMaterial>>,
     ) {
-        let cursor_pos = window.cursor_position().unwrap_or(camera.translation.xy());
+        let (camera, camera_global_transform, camera_transform) = camera.into_inner();
+
+        let cursor_pos = get_cursor_world_pos(window.into_inner(), camera, camera_global_transform)
+            .unwrap_or(camera_transform.translation.xy());
         for event in obstacle_event.read() {
             // Components that all obstacles have in common
             let common_components = (
@@ -112,16 +115,13 @@ impl ObstaclePlugin {
         mut ghost_obs: Single<&mut Transform, With<GhostObstacle>>,
         camera: Single<(&Camera, &GlobalTransform), With<Camera2d>>,
     ) {
-        let target_translation = window
-            .cursor_position()
-            .map_or(ghost_obs.translation, |pos| {
-                let (camera, camera_transform) = camera.into_inner();
-                // Convert screen to world pos: https://bevy-cheatbook.github.io/cookbook/cursor2world.html
-                camera
-                    .viewport_to_world_2d(camera_transform, pos)
-                    .unwrap()
-                    .extend(ghost_obs.translation.z)
-            });
+        let (camera, camera_transform) = camera.into_inner();
+
+        let target_translation =
+            get_cursor_world_pos(window.into_inner(), camera, camera_transform)
+                .map_or(ghost_obs.translation, |pos| {
+                    pos.extend(ghost_obs.translation.z)
+                });
 
         let diff = target_translation - ghost_obs.translation;
         let diff_length = diff.length();
@@ -154,4 +154,18 @@ impl ObstaclePlugin {
         // change the placement and start a replay by pressing space or something
         state.set(GameMode::Replay)
     }
+}
+
+pub fn get_cursor_world_pos(
+    window: &Window,
+
+    camera: &Camera,
+
+    camera_transform: &GlobalTransform,
+) -> Option<Vec2> {
+    // Convert screen to world pos: https://bevy-cheatbook.github.io/cookbook/cursor2world.html
+
+    window
+        .cursor_position()
+        .map(|pos| camera.viewport_to_world_2d(camera_transform, pos).unwrap())
 }
