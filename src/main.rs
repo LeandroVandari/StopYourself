@@ -1,5 +1,8 @@
 use avian2d::prelude::*;
-use bevy::{prelude::*, window::WindowResolution};
+use bevy::{
+    prelude::*,
+    window::{PresentMode, WindowResolution},
+};
 
 fn main() {
     App::new()
@@ -8,6 +11,7 @@ fn main() {
                 primary_window: Some(Window {
                     title: "Stop yourself".into(),
                     resolution: WindowResolution::new(1000., 600.),
+                    present_mode: PresentMode::AutoNoVsync,
                     ..Default::default()
                 }),
                 ..Default::default()
