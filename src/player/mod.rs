@@ -66,33 +66,59 @@ impl PlayerPlugin {
     }
 
     fn move_to_start_pos(
-        mut player: Single<&mut Transform, With<Player>>,
+        player: Single<(&mut Transform, &mut LinearVelocity), With<Player>>,
         level_dimensions: Res<LevelDimensions>,
     ) {
-        player.translation = level_dimensions
+        let (mut transform, mut velocity) = player.into_inner();
+        transform.translation = level_dimensions
             .grid_pos_to_pixels((1, 3), vec2(40., 80.))
             .extend(1.);
+
+        velocity.0 = Vec2::ZERO;
     }
 
     fn handle_death(
+        mut commands: Commands,
         game_mode: Res<State<GameMode>>,
         mut state: ResMut<NextState<GameMode>>,
         mut reset_environment: EventWriter<ResetEnvironment>,
         mut recorded_moves: ResMut<RecordedMovements>,
+
+        asset_server: Res<AssetServer>,
     ) {
         match game_mode.get() {
             GameMode::Survive => {
-                reset_environment.write(ResetEnvironment);
-                recorded_moves.movements.clear();
+                info!("Player died in survive mode. Restarting mode.");
             }
             GameMode::Replay => {
-                reset_environment.write(ResetEnvironment);
+                info!("Player died in replay mode. Moving on to survive.");
+                commands.spawn((
+                    Text::new("Congrats!\nYou Killed Yourself"),
+                    TextFont {
+                        // This font is just a placeholder, feel free to change :)
+                        font: asset_server.load("fonts/Yeti Sighting.ttf"),
+                        font_size: 67.,
+                        ..Default::default()
+                    },
+                    TextLayout::new_with_justify(JustifyText::Center),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: Val::Percent(0.5),
+                        top: Val::Percent(0.2),
+                        right: Val::Percent(0.5),
+                        ..Default::default()
+                    },
+                ));
                 state.set(GameMode::Survive);
-                recorded_moves.movements.clear();
             }
             GameMode::Defend => {
-                error!("Player should not die in the defend game mode.")
+                warn!(
+                    "Player should not die in the defend game mode. This probably happened because they touched the flag and something killed them at the same time."
+                );
+                return;
             }
         }
+        recorded_moves.movements.clear();
+        reset_environment.write(ResetEnvironment);
     }
 }
