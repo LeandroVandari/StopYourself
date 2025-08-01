@@ -144,7 +144,7 @@ impl PlayerMovementPlugin {
             movement_event_writer.write(MovementAction::Move(direction));
         }
 
-        if keyboard.just_pressed(KeyCode::Space) {
+        if keyboard.pressed(KeyCode::Space) {
             movement_event_writer.write(MovementAction::Jump);
         }
     }
