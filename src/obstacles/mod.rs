@@ -1,7 +1,10 @@
 use avian2d::prelude::*;
 use bevy::{input::common_conditions::input_just_pressed, prelude::*, window::PrimaryWindow};
 
-use crate::modes::GameMode;
+use crate::{
+    modes::GameMode,
+    player::{Player, PlayerDeath},
+};
 
 #[derive(Debug)]
 pub enum ObstacleType {
@@ -56,22 +59,46 @@ impl ObstaclePlugin {
     ) {
         let cursor_pos = window.cursor_position().unwrap_or(camera.translation.xy());
         for event in obstacle_event.read() {
-            commands.spawn((
+            // Components that all obstacles have in common
+            let common_components = (
                 GhostObstacle,
                 ObstacleMarker,
                 Transform::from_translation(cursor_pos.extend(0.)),
                 MeshMaterial2d(materials.add(ColorMaterial::from_color(Color::WHITE))),
-                match event.obs_type {
-                    ObstacleType::Spike => (
-                        Collider::triangle(vec2(-20.0, 0.0), vec2(20.0, 0.0), vec2(0.0, 40.0)),
-                        Mesh2d(meshes.add(Triangle2d::new(
-                            vec2(-20.0, 0.0),
-                            vec2(20.0, 0.0),
-                            vec2(0.0, 40.0),
-                        ))),
-                    ),
-                },
-            ));
+            );
+
+            match event.obs_type {
+                ObstacleType::Spike => {
+                    commands
+                        .spawn((
+                            common_components,
+                            CollisionEventsEnabled,
+                            Sensor,
+                            Collider::triangle(vec2(-20.0, 0.0), vec2(20.0, 0.0), vec2(0.0, 40.0)),
+                            Mesh2d(meshes.add(Triangle2d::new(
+                                vec2(-20.0, 0.0),
+                                vec2(20.0, 0.0),
+                                vec2(0.0, 40.0),
+                            ))),
+                        ))
+                        .observe(
+                            |trigger: Trigger<OnCollisionStart>,
+                             player_query: Query<(), With<Player>>,
+                             mut death_writer: EventWriter<PlayerDeath>,
+                             ghost_query: Query<&GhostObstacle>| {
+                                let spike = trigger.target();
+                                // If we're still placing the spike
+                                if ghost_query.contains(spike) {
+                                    return;
+                                }
+
+                                if player_query.contains(trigger.collider) {
+                                    death_writer.write(PlayerDeath);
+                                }
+                            },
+                        );
+                }
+            }
         }
     }
     /// Make the ghost obstacle follow the mouse.
@@ -110,7 +137,6 @@ impl ObstaclePlugin {
     ) {
         let mut obs_entity = commands.entity(ghost_obs.into_inner());
         obs_entity.remove::<GhostObstacle>();
-        obs_entity.insert(RigidBody::Static);
         // Doing this straight after placing the object for now, but we probably want to allow them to
         // change the placement and start a replay by pressing space or something
         state.set(GameMode::Replay)

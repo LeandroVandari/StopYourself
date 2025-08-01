@@ -1,7 +1,11 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use crate::{LevelDimensions, player::movement::CharacterControllerBundle};
+use crate::{LevelDimensions, modes::GameMode, player::movement::CharacterControllerBundle};
+
+/// Player died
+#[derive(Debug, Event)]
+pub struct PlayerDeath;
 
 mod movement;
 pub mod record_movement;
@@ -15,10 +19,19 @@ impl Plugin for PlayerPlugin {
             record_movement::RecordMovementPlugin,
         ))
         .add_event::<ResetPlayer>()
+        .add_event::<PlayerDeath>()
         .add_systems(Startup, Self::spawn_player)
         .add_systems(
             Update,
             Self::move_to_start_pos.run_if(on_event::<ResetPlayer>),
+        )
+        .add_systems(
+            Update,
+            (
+                Self::handle_survive_death.run_if(in_state(GameMode::Survive)),
+                Self::handle_replay_death.run_if(in_state(GameMode::Replay)),
+            )
+                .run_if(on_event::<PlayerDeath>),
         );
     }
 }
@@ -64,5 +77,13 @@ impl PlayerPlugin {
         player.translation = level_dimensions
             .grid_pos_to_pixels((1, 3), vec2(40., 80.))
             .extend(1.);
+    }
+
+    fn handle_survive_death() {
+        println!("oops :(")
+    }
+
+    fn handle_replay_death() {
+        println!("yay :)")
     }
 }
