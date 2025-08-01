@@ -30,3 +30,4 @@ bevy = { workspace = true, features = [
     "webgl2",
     "dynamic_linking",
 ] }
+bevy_framepace = "0.19.1"
