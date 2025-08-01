@@ -1,6 +1,9 @@
 use bevy::{diagnostic::FrameCount, prelude::*};
 
-use crate::player::{ResetPlayer, record_movement::RecordedMovements};
+use crate::{
+    obstacles::SpawnGhostObstacleEvent,
+    player::{ResetPlayer, record_movement::RecordedMovements},
+};
 
 /// The two modes for the game
 #[derive(States, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
@@ -23,7 +26,8 @@ impl Plugin for ModesManagement {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (Self::change_to_defend.run_if(on_event::<GoalReached>),),
+            (Self::change_to_defend
+                .run_if(on_event::<GoalReached>.and(in_state(GameMode::Survive))),),
         )
         .add_systems(OnEnter(GameMode::Replay), Self::replay)
         .init_state::<GameMode>()
@@ -35,10 +39,11 @@ impl ModesManagement {
     fn change_to_defend(
         mut state: ResMut<NextState<GameMode>>,
         mut reset_player: EventWriter<ResetPlayer>,
+        mut spawn_obstacle_writer: EventWriter<SpawnGhostObstacleEvent>,
     ) {
         reset_player.write(ResetPlayer);
-        // TODO: Change this to defend when implementing it
-        state.set(GameMode::Replay);
+        spawn_obstacle_writer.write(SpawnGhostObstacleEvent::random());
+        state.set(GameMode::Defend);
     }
 
     fn replay(mut recorded_movements: ResMut<RecordedMovements>, frame: Res<FrameCount>) {
