@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use crate::{
     LevelDimensions,
     environment::ResetEnvironment,
-    modes::GameMode,
+    modes::{GameMode, ModesManagement},
     player::{movement::CharacterControllerBundle, record_movement::RecordedMovements},
 };
 
@@ -27,10 +27,15 @@ impl Plugin for PlayerPlugin {
         .add_event::<PlayerDeath>()
         .add_systems(Startup, Self::spawn_player)
         .add_systems(
-            Update,
+            FixedUpdate,
             Self::move_to_start_pos.run_if(on_event::<ResetEnvironment>),
         )
-        .add_systems(Update, (Self::handle_death).run_if(on_event::<PlayerDeath>));
+        .add_systems(
+            FixedUpdate,
+            (Self::handle_death)
+                .after(ModesManagement::handle_goal_reached)
+                .run_if(on_event::<PlayerDeath>),
+        );
     }
 }
 /// Marker for the player character.

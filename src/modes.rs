@@ -1,3 +1,4 @@
+use avian2d::prelude::*;
 use bevy::{diagnostic::FrameCount, prelude::*};
 
 use crate::{
@@ -26,7 +27,7 @@ pub struct ModesManagement;
 impl Plugin for ModesManagement {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            FixedUpdate,
             (Self::handle_goal_reached.run_if(on_event::<GoalReached>),),
         )
         .add_systems(OnEnter(GameMode::Replay), Self::replay)
@@ -36,7 +37,7 @@ impl Plugin for ModesManagement {
 }
 
 impl ModesManagement {
-    fn handle_goal_reached(
+    pub fn handle_goal_reached(
         mut commands: Commands,
         curr_state: Res<State<GameMode>>,
         mut state: ResMut<NextState<GameMode>>,
@@ -59,7 +60,8 @@ impl ModesManagement {
                             .expect("If we're in replay mode an obstacle was already placed.")
                             .into_inner(),
                     )
-                    .insert(GhostObstacle);
+                    .insert(GhostObstacle)
+                    .remove::<CollisionEventsEnabled>();
             }
             GameMode::Defend => {
                 warn!("Shouldn't reach goal in the defend game mode...")

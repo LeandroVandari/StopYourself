@@ -42,7 +42,7 @@ pub struct ObstaclePlugin;
 impl Plugin for ObstaclePlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SpawnGhostObstacleEvent>().add_systems(
-            Update,
+            FixedUpdate,
             (
                 Self::spawn_obstacle_ghost.run_if(on_event::<SpawnGhostObstacleEvent>),
                 Self::ghost_obstacle_follow_mouse,
@@ -78,7 +78,6 @@ impl ObstaclePlugin {
                     commands
                         .spawn((
                             common_components,
-                            CollisionEventsEnabled,
                             Sensor,
                             Collider::triangle(vec2(-20.0, 0.0), vec2(20.0, 0.0), vec2(0.0, 40.0)),
                             Mesh2d(meshes.add(Triangle2d::new(
@@ -149,7 +148,8 @@ impl ObstaclePlugin {
 
         let mut obs_entity = commands.entity(ghost_obs.into_inner());
         obs_entity.remove::<GhostObstacle>();
-        obs_entity.insert(LastInsertedObstacle);
+        obs_entity.insert((LastInsertedObstacle, CollisionEventsEnabled));
+
         // Doing this straight after placing the object for now, but we probably want to allow them to
         // change the placement and start a replay by pressing space or something
         state.set(GameMode::Replay)
