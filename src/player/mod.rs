@@ -1,7 +1,16 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use crate::{LevelDimensions, player::movement::CharacterControllerBundle};
+use crate::{
+    LevelDimensions,
+    environment::ResetEnvironment,
+    modes::GameMode,
+    player::{movement::CharacterControllerBundle, record_movement::RecordedMovements},
+};
+
+/// Player died
+#[derive(Debug, Event)]
+pub struct PlayerDeath;
 
 mod movement;
 pub mod record_movement;
@@ -14,20 +23,19 @@ impl Plugin for PlayerPlugin {
             movement::PlayerMovementPlugin,
             record_movement::RecordMovementPlugin,
         ))
-        .add_event::<ResetPlayer>()
+        .add_event::<ResetEnvironment>()
+        .add_event::<PlayerDeath>()
         .add_systems(Startup, Self::spawn_player)
         .add_systems(
             Update,
-            Self::move_to_start_pos.run_if(on_event::<ResetPlayer>),
-        );
+            Self::move_to_start_pos.run_if(on_event::<ResetEnvironment>),
+        )
+        .add_systems(Update, (Self::handle_death).run_if(on_event::<PlayerDeath>));
     }
 }
 /// Marker for the player character.
 #[derive(Debug, Component)]
 pub struct Player;
-
-#[derive(Debug, Event)]
-pub struct ResetPlayer;
 
 impl PlayerPlugin {
     fn spawn_player(
@@ -44,7 +52,7 @@ impl PlayerPlugin {
             MeshMaterial2d(materials.add(ColorMaterial::from_color(Color::WHITE))),
             // Movement
             CharacterControllerBundle::new(Collider::rectangle(40., 80.))
-                .with_movement(1250., 0.92, 400.),
+                .with_movement(1250., 0.92, 800.),
             Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
             Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
             ColliderDensity(2.0),
@@ -64,5 +72,27 @@ impl PlayerPlugin {
         player.translation = level_dimensions
             .grid_pos_to_pixels((1, 3), vec2(40., 80.))
             .extend(1.);
+    }
+
+    fn handle_death(
+        game_mode: Res<State<GameMode>>,
+        mut state: ResMut<NextState<GameMode>>,
+        mut reset_environment: EventWriter<ResetEnvironment>,
+        mut recorded_moves: ResMut<RecordedMovements>,
+    ) {
+        match game_mode.get() {
+            GameMode::Survive => {
+                reset_environment.write(ResetEnvironment);
+                recorded_moves.movements.clear();
+            }
+            GameMode::Replay => {
+                reset_environment.write(ResetEnvironment);
+                state.set(GameMode::Survive);
+                recorded_moves.movements.clear();
+            }
+            GameMode::Defend => {
+                error!("Player should not die in the defend game mode.")
+            }
+        }
     }
 }

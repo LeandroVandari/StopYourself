@@ -5,9 +5,13 @@ use crate::{LevelDimensions, modes::GoalReached, player::Player};
 
 pub struct EnvironmentPlugin;
 
+#[derive(Debug, Event)]
+pub struct ResetEnvironment;
+
 impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (Self::spawn_ground, Self::spawn_goal));
+        app.add_systems(Startup, (Self::spawn_ground, Self::spawn_goal))
+            .add_event::<ResetEnvironment>();
     }
 }
 
