@@ -14,6 +14,7 @@ pub struct PlayerDeath;
 
 mod movement;
 pub mod record_movement;
+pub mod record_position;
 /// Player spawning and movement handling.
 pub struct PlayerPlugin;
 
@@ -22,20 +23,28 @@ impl Plugin for PlayerPlugin {
         app.add_plugins((
             movement::PlayerMovementPlugin,
             record_movement::RecordMovementPlugin,
+            record_position::RecordPositionPlugin,
         ))
         .add_event::<ResetEnvironment>()
         .add_event::<PlayerDeath>()
+        .add_event::<PositionEvent>()
         .add_systems(Startup, Self::spawn_player)
         .add_systems(
             Update,
             Self::move_to_start_pos.run_if(on_event::<ResetEnvironment>),
         )
-        .add_systems(Update, (Self::handle_death).run_if(on_event::<PlayerDeath>));
+        .add_systems(Update, (Self::handle_death).run_if(on_event::<PlayerDeath>))
+        .add_systems(FixedUpdate, Self::emit_position);
     }
 }
 /// Marker for the player character.
 #[derive(Debug, Component)]
 pub struct Player;
+
+#[derive(Debug, Event, Clone, Copy)]
+pub enum PositionEvent {
+    Position(Vec2),
+}
 
 impl PlayerPlugin {
     fn spawn_player(
@@ -75,6 +84,13 @@ impl PlayerPlugin {
             .extend(1.);
 
         velocity.0 = Vec2::ZERO;
+    }
+
+    fn emit_position(
+        player: Single<(&GlobalTransform), With<Player>>,
+        mut position_event_writer: EventWriter<PositionEvent>,
+    ) {
+        position_event_writer.write(PositionEvent::Position(player.translation().truncate()));
     }
 
     fn handle_death(
