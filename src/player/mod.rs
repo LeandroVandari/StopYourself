@@ -4,18 +4,22 @@ use bevy::prelude::*;
 use crate::{LevelDimensions, player::movement::CharacterControllerBundle};
 
 mod movement;
+pub mod record_movement;
 /// Player spawning and movement handling.
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(movement::PlayerMovementPlugin)
-            .add_event::<ResetPlayer>()
-            .add_systems(Startup, Self::spawn_player)
-            .add_systems(
-                Update,
-                Self::move_to_start_pos.run_if(on_event::<ResetPlayer>),
-            );
+        app.add_plugins((
+            movement::PlayerMovementPlugin,
+            record_movement::RecordMovementPlugin,
+        ))
+        .add_event::<ResetPlayer>()
+        .add_systems(Startup, Self::spawn_player)
+        .add_systems(
+            Update,
+            Self::move_to_start_pos.run_if(on_event::<ResetPlayer>),
+        );
     }
 }
 /// Marker for the player character.
