@@ -1,15 +1,19 @@
 use avian2d::prelude::*;
-use bevy::{input::common_conditions::input_just_pressed, prelude::*, window::PrimaryWindow};
+use bevy::{
+    diagnostic::FrameCount, input::common_conditions::input_just_pressed, prelude::*,
+    window::PrimaryWindow,
+};
 
 use crate::{
     GameState,
     modes::GameMode,
-    player::{Player, PlayerDeath},
+    player::{Player, PlayerDeath, record_position::RecordedPositions},
 };
 
 #[derive(Debug)]
 pub enum ObstacleType {
     Spike,
+    Laser,
 }
 
 /// Marker component for obstacles
@@ -24,6 +28,19 @@ pub struct LastInsertedObstacle;
 #[derive(Debug, Component)]
 pub struct GhostObstacle;
 
+#[derive(Debug, Component)]
+pub struct Flicker {
+    // How many frames between each appearance start, in frames
+    period: u32,
+    // How long until this appears for the first time, in frames
+    delay: u32,
+    // How long this appears for, in frames
+    duration: u32,
+    // the original position of the object
+    // (we flicker objects by physically placing them far away)
+    original_position: Vec3,
+}
+
 #[derive(Debug, Event)]
 pub struct SpawnGhostObstacleEvent {
     obs_type: ObstacleType,
@@ -33,7 +50,7 @@ impl SpawnGhostObstacleEvent {
     // TODO: make it actually random
     pub fn random() -> Self {
         Self {
-            obs_type: ObstacleType::Spike,
+            obs_type: ObstacleType::Laser,
         }
     }
 }
@@ -59,11 +76,44 @@ impl Plugin for ObstaclePlugin {
                             .and(in_state(GameMode::Defend).and(in_state(GameState::Game))),
                     )
                     .before(crate::update_state),
+            )
+            .add_systems(
+                FixedUpdate,
+                Self::flicker_on_frames.run_if(
+                    (in_state(GameMode::Replay).or(in_state(GameMode::Survive)))
+                        .and(in_state(GameState::Game)),
+                ),
             );
     }
 }
 
 impl ObstaclePlugin {
+    fn flicker_on_frames(
+        frame_counter: Res<FrameCount>,
+        recorded_positions: Res<RecordedPositions>,
+        query: Query<(&mut Transform, &mut Flicker)>,
+    ) {
+        let start_frame = recorded_positions.frame_start;
+        if frame_counter.0 < start_frame {
+            return;
+        }
+        for (mut transform, mut flicker) in query {
+            let frame_for_flicker =
+                (frame_counter.0 - start_frame + flicker.delay) % flicker.period;
+            if frame_for_flicker < flicker.duration {
+                if transform.translation != Vec3::X * 10_000. {
+                    flicker.original_position = transform.translation;
+                }
+                transform.translation = flicker.original_position;
+            } else {
+                if transform.translation != Vec3::X * 10_000. {
+                    flicker.original_position = transform.translation;
+                    transform.translation = Vec3::X * 10_000.;
+                }
+            }
+        }
+    }
+
     fn spawn_obstacle_ghost(
         mut commands: Commands,
         mut obstacle_event: EventReader<SpawnGhostObstacleEvent>,
@@ -82,7 +132,9 @@ impl ObstaclePlugin {
                 GhostObstacle,
                 ObstacleMarker,
                 Transform::from_translation(cursor_pos.extend(0.)),
-                MeshMaterial2d(materials.add(ColorMaterial::from_color(Color::WHITE))),
+                MeshMaterial2d(
+                    materials.add(ColorMaterial::from_color(Color::srgb(1.0, 0.2, 0.3))),
+                ),
             );
 
             match event.obs_type {
@@ -116,6 +168,40 @@ impl ObstaclePlugin {
                             },
                         );
                 }
+                ObstacleType::Laser => {
+                    commands
+                        .spawn((
+                            common_components,
+                            CollisionEventsEnabled,
+                            Sensor,
+                            Collider::rectangle(40.0, 1000.0),
+                            Mesh2d(meshes.add(Rectangle {
+                                half_size: vec2(40., 1000.),
+                            })),
+                            Flicker {
+                                period: 100,
+                                delay: 0,
+                                duration: 40,
+                                original_position: Vec3::ZERO,
+                            },
+                        ))
+                        .observe(
+                            |trigger: Trigger<OnCollisionStart>,
+                             player_query: Query<(), With<Player>>,
+                             mut death_writer: EventWriter<PlayerDeath>,
+                             ghost_query: Query<&GhostObstacle>| {
+                                let laser = trigger.target();
+                                // If we're still placing the laser
+                                if ghost_query.contains(laser) {
+                                    return;
+                                }
+
+                                if player_query.contains(trigger.collider) {
+                                    death_writer.write(PlayerDeath);
+                                }
+                            },
+                        );
+                }
             }
         }
     }
@@ -128,11 +214,19 @@ impl ObstaclePlugin {
     ) {
         let (camera, camera_transform) = camera.into_inner();
 
-        let target_translation =
-            get_cursor_world_pos(window.into_inner(), camera, camera_transform)
+        let inner_window = window.into_inner();
+
+        if ghost_obs.translation == Vec3::X * 10_000. {
+            ghost_obs.translation = get_cursor_world_pos(inner_window, camera, camera_transform)
                 .map_or(ghost_obs.translation, |pos| {
                     pos.extend(ghost_obs.translation.z)
                 });
+        }
+
+        let target_translation = get_cursor_world_pos(inner_window, camera, camera_transform)
+            .map_or(ghost_obs.translation, |pos| {
+                pos.extend(ghost_obs.translation.z)
+            });
 
         let diff = target_translation - ghost_obs.translation;
         let diff_length = diff.length();
