@@ -59,8 +59,10 @@ impl RecordPositionPlugin {
         mut player: Single<&mut Transform, With<Player>>,
     ) {
         let start_frame = recorded_positions.last_played_frame;
-        let positions = recorded_positions.positions.clone();
-        for position in positions
+        let mut last_played_frame = recorded_positions.last_played_frame;
+
+        for position in recorded_positions
+            .positions
             .iter()
             .skip_while(|pos| pos.0 < start_frame as u32)
         {
@@ -69,7 +71,9 @@ impl RecordPositionPlugin {
             }
             player.translation = position.1;
 
-            recorded_positions.last_played_frame = position.0 as usize;
+            last_played_frame = position.0 as usize;
         }
+
+        recorded_positions.last_played_frame = last_played_frame;
     }
 }
