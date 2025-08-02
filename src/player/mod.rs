@@ -58,11 +58,11 @@ impl PlayerPlugin {
             MeshMaterial2d(materials.add(ColorMaterial::from_color(Color::WHITE))),
             // Movement
             CharacterControllerBundle::new(Collider::rectangle(40., 40.))
-                .with_movement(6250., 0.82, 800.),
+                .with_movement(6250., 0.82, 1600.),
             Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
             Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
             ColliderDensity(2.0),
-            GravityScale(1.5),
+            GravityScale(8.0),
             Transform::from_translation(
                 level_dimensions
                     .grid_pos_to_pixels((1, 3), vec2(40., 40.))
