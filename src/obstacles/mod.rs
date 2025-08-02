@@ -41,14 +41,20 @@ pub struct ObstaclePlugin;
 
 impl Plugin for ObstaclePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SpawnGhostObstacleEvent>().add_systems(
-            Update,
-            (
-                Self::spawn_obstacle_ghost.run_if(on_event::<SpawnGhostObstacleEvent>),
-                Self::ghost_obstacle_follow_mouse,
-                Self::place_ghost_obs.run_if(input_just_pressed(MouseButton::Left)),
-            ),
-        );
+        app.add_event::<SpawnGhostObstacleEvent>()
+            .add_systems(
+                Update,
+                (
+                    Self::spawn_obstacle_ghost.run_if(on_event::<SpawnGhostObstacleEvent>),
+                    Self::ghost_obstacle_follow_mouse,
+                ),
+            )
+            .add_systems(
+                FixedPreUpdate,
+                Self::place_ghost_obs
+                    .run_if(input_just_pressed(MouseButton::Left))
+                    .before(crate::update_state),
+            );
     }
 }
 
@@ -150,9 +156,6 @@ impl ObstaclePlugin {
         let mut obs_entity = commands.entity(ghost_obs.into_inner());
         obs_entity.remove::<GhostObstacle>();
         obs_entity.insert(LastInsertedObstacle);
-        // Doing this straight after placing the object for now, but we probably want to allow them to
-        // change the placement and start a replay by pressing space or something
-        state.set(GameMode::Replay)
     }
 }
 

@@ -5,11 +5,15 @@ use avian2d::{
     math::{AdjustPrecision, Scalar, Vector},
     prelude::*,
 };
-use bevy::{diagnostic::FrameCount, prelude::*};
+use bevy::{
+    diagnostic::FrameCount,
+    input::{common_conditions::input_just_released, mouse::MouseButtonInput},
+    prelude::*,
+};
 
 use crate::{
     modes::GameMode,
-    player::{Player, record_movement::RecordedMovements},
+    player::{Player, record_position::RecordPositionPlugin},
 };
 
 pub struct PlayerMovementPlugin;
@@ -19,13 +23,16 @@ impl Plugin for PlayerMovementPlugin {
         app.add_systems(
             FixedUpdate,
             (
-                (Self::keyboard_input).run_if(in_state(GameMode::Survive)), // Only get the input if we're in the survive mode
-                Self::play_recorded_input.run_if(in_state(GameMode::Replay)), // Else play whatever is recorded
-                Self::update_grounded,
-                Self::movement,
-                Self::apply_movement_damping,
-            )
+                ((
+                    Self::keyboard_input, // Only get the input if we're in the survive mode
+                    Self::update_grounded,
+                    Self::movement,
+                    Self::apply_movement_damping,
+                )
+                    .run_if(in_state(GameMode::Survive)))
                 .chain(),
+                RecordPositionPlugin::play_recorded_position.run_if(in_state(GameMode::Replay)),
+            ),
         )
         .add_event::<MovementAction>();
     }
@@ -115,21 +122,6 @@ impl CharacterControllerBundle {
 }
 
 impl PlayerMovementPlugin {
-    fn play_recorded_input(
-        mut movement_event_writer: EventWriter<MovementAction>,
-        mut recorded_movement: ResMut<RecordedMovements>,
-        frame: Res<FrameCount>,
-    ) {
-        let curr_frame = frame.0;
-        while let Some(first_movement) = recorded_movement.movements.front() {
-            if curr_frame - recorded_movement.frame_start < first_movement.0 {
-                break;
-            }
-            movement_event_writer.write(first_movement.1);
-            recorded_movement.movements.pop_front();
-        }
-    }
-
     pub(crate) fn keyboard_input(
         mut movement_event_writer: EventWriter<MovementAction>,
         keyboard: Res<ButtonInput<KeyCode>>,
