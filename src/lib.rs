@@ -1,9 +1,6 @@
-use bevy::{
-    diagnostic::FrameCount, input::common_conditions::input_just_pressed, prelude::*,
-    window::PrimaryWindow,
-};
+use bevy::{prelude::*, window::PrimaryWindow};
 
-use crate::{modes::GameMode, player::record_position::RecordedPositions};
+use crate::modes::GameMode;
 
 pub mod camera;
 pub mod environment;
