@@ -40,7 +40,7 @@ impl Plugin for ModesManagement {
         )
         .add_systems(
             FixedUpdate,
-            (Self::draw_player_ghost.run_if(on_event::<GoalReached>),),
+            (Self::draw_player_ghost.run_if(in_state(GameMode::Defend)),),
         )
         .add_systems(OnEnter(GameMode::Replay), Self::replay)
         .init_state::<GameMode>()
@@ -49,23 +49,14 @@ impl Plugin for ModesManagement {
 }
 
 impl ModesManagement {
-    fn draw_player_ghost(
-        mut commands: Commands,
-        mut meshes: ResMut<Assets<Mesh>>,
-        mut materials: ResMut<Assets<ColorMaterial>>,
-        recorded_positions: Res<RecordedPositions>,
-    ) {
-        for (_, recorded_position) in &recorded_positions.positions {
-            commands.spawn((
-                // Appearance
-                Mesh2d(meshes.add(Rectangle {
-                    half_size: vec2(20., 40.),
-                })),
-                MeshMaterial2d(materials.add(ColorMaterial::from_color(Color::WHITE))),
-                // Movement
-                Transform::from_translation(*recorded_position),
-            ));
-        }
+    fn draw_player_ghost(recorded_positions: Res<RecordedPositions>, mut gizmos: Gizmos) {
+        gizmos.linestrip_2d(
+            recorded_positions
+                .positions
+                .iter()
+                .map(|(_, pos)| pos.truncate()),
+            Color::WHITE,
+        );
     }
     fn handle_flag_reached(
         mut commands: Commands,
