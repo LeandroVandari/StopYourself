@@ -53,19 +53,19 @@ impl PlayerPlugin {
         commands.spawn((
             // Appearance
             Mesh2d(meshes.add(Rectangle {
-                half_size: vec2(20., 40.),
+                half_size: vec2(20., 20.),
             })),
             MeshMaterial2d(materials.add(ColorMaterial::from_color(Color::WHITE))),
             // Movement
-            CharacterControllerBundle::new(Collider::rectangle(40., 80.))
-                .with_movement(1250., 0.92, 800.),
+            CharacterControllerBundle::new(Collider::rectangle(40., 40.))
+                .with_movement(6250., 0.82, 1600.),
             Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
             Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
             ColliderDensity(2.0),
-            GravityScale(1.5),
+            GravityScale(8.0),
             Transform::from_translation(
                 level_dimensions
-                    .grid_pos_to_pixels((1, 3), vec2(40., 80.))
+                    .grid_pos_to_pixels((1, 3), vec2(40., 40.))
                     .extend(1.),
             ),
         ));
@@ -78,7 +78,7 @@ impl PlayerPlugin {
     ) {
         let (mut transform, mut velocity) = player.into_inner();
         transform.translation = level_dimensions
-            .grid_pos_to_pixels((1, 3), vec2(40., 80.))
+            .grid_pos_to_pixels((1, 3), vec2(40., 40.))
             .extend(1.);
 
         velocity.0 = Vec2::ZERO;

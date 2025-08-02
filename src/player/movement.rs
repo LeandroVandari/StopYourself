@@ -181,6 +181,8 @@ impl PlayerMovementPlugin {
                     MovementAction::Jump => {
                         if is_grounded {
                             linear_velocity.y = jump_impulse.0;
+                        } else if linear_velocity.y > 0.0 {
+                            linear_velocity.y += jump_impulse.0 * 0.05;
                         }
                     }
                 }

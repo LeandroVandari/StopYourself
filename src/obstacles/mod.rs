@@ -185,7 +185,7 @@ impl ObstaclePlugin {
                             })),
                             Flicker {
                                 period: 100,
-                                delay: 0,
+                                delay: rand::random_range(0..50),
                                 duration: 40,
                                 original_position: Vec3::ZERO,
                             },
