@@ -5,7 +5,7 @@ use crate::{
     LevelDimensions,
     environment::ResetEnvironment,
     modes::GameMode,
-    player::{movement::CharacterControllerBundle, record_movement::RecordedMovements},
+    player::{movement::CharacterControllerBundle, record_position::RecordedPositions},
 };
 
 /// Player died
@@ -13,7 +13,7 @@ use crate::{
 pub struct PlayerDeath;
 
 mod movement;
-pub mod record_movement;
+//pub mod record_movement;
 pub mod record_position;
 /// Player spawning and movement handling.
 pub struct PlayerPlugin;
@@ -22,29 +22,26 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             movement::PlayerMovementPlugin,
-            record_movement::RecordMovementPlugin,
             record_position::RecordPositionPlugin,
         ))
         .add_event::<ResetEnvironment>()
         .add_event::<PlayerDeath>()
-        .add_event::<PositionEvent>()
         .add_systems(Startup, Self::spawn_player)
         .add_systems(
-            Update,
+            FixedUpdate,
             Self::move_to_start_pos.run_if(on_event::<ResetEnvironment>),
         )
-        .add_systems(Update, (Self::handle_death).run_if(on_event::<PlayerDeath>))
-        .add_systems(FixedUpdate, Self::emit_position);
+        .add_systems(
+            FixedPreUpdate,
+            (Self::handle_death)
+                .run_if(on_event::<PlayerDeath>)
+                .before(crate::update_state),
+        );
     }
 }
 /// Marker for the player character.
 #[derive(Debug, Component)]
 pub struct Player;
-
-#[derive(Debug, Event, Clone, Copy)]
-pub enum PositionEvent {
-    Position(Vec2),
-}
 
 impl PlayerPlugin {
     fn spawn_player(
@@ -77,6 +74,7 @@ impl PlayerPlugin {
     fn move_to_start_pos(
         player: Single<(&mut Transform, &mut LinearVelocity), With<Player>>,
         level_dimensions: Res<LevelDimensions>,
+        mut recorded_positions: ResMut<RecordedPositions>,
     ) {
         let (mut transform, mut velocity) = player.into_inner();
         transform.translation = level_dimensions
@@ -84,13 +82,7 @@ impl PlayerPlugin {
             .extend(1.);
 
         velocity.0 = Vec2::ZERO;
-    }
-
-    fn emit_position(
-        player: Single<(&GlobalTransform), With<Player>>,
-        mut position_event_writer: EventWriter<PositionEvent>,
-    ) {
-        position_event_writer.write(PositionEvent::Position(player.translation().truncate()));
+        recorded_positions.locked = false;
     }
 
     fn handle_death(
@@ -98,13 +90,16 @@ impl PlayerPlugin {
         game_mode: Res<State<GameMode>>,
         mut state: ResMut<NextState<GameMode>>,
         mut reset_environment: EventWriter<ResetEnvironment>,
-        mut recorded_moves: ResMut<RecordedMovements>,
+
+        mut recorded_positions: ResMut<RecordedPositions>,
 
         asset_server: Res<AssetServer>,
     ) {
         match game_mode.get() {
             GameMode::Survive => {
                 info!("Player died in survive mode. Restarting mode.");
+                recorded_positions.positions.clear();
+                recorded_positions.locked = true;
             }
             GameMode::Replay => {
                 info!("Player died in replay mode. Moving on to survive.");
@@ -126,6 +121,8 @@ impl PlayerPlugin {
                     },
                 ));
                 state.set(GameMode::Survive);
+                recorded_positions.positions.clear();
+                recorded_positions.locked = true;
             }
             GameMode::Defend => {
                 warn!(
@@ -134,7 +131,6 @@ impl PlayerPlugin {
                 return;
             }
         }
-        recorded_moves.movements.clear();
         reset_environment.write(ResetEnvironment);
     }
 }

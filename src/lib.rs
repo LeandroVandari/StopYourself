@@ -10,8 +10,14 @@ pub struct SetupPlugin;
 
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, Self::level_dimensions);
+        app.add_systems(PreStartup, Self::level_dimensions)
+            .add_systems(FixedPreUpdate, update_state);
     }
+}
+
+// Anything that can mutate state should run before this.
+fn update_state(world: &mut World) {
+    world.try_run_schedule(StateTransition).unwrap();
 }
 
 #[derive(Debug, Resource)]
