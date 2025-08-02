@@ -1,7 +1,7 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use crate::{LevelDimensions, modes::GoalReached, player::Player};
+use crate::{GameState, LevelDimensions, modes::GoalReached, player::Player};
 
 pub struct EnvironmentPlugin;
 
@@ -10,8 +10,11 @@ pub struct ResetEnvironment;
 
 impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (Self::spawn_ground, Self::spawn_goal))
-            .add_event::<ResetEnvironment>();
+        app.add_systems(
+            OnEnter(GameState::Game),
+            (Self::spawn_ground, Self::spawn_goal),
+        )
+        .add_event::<ResetEnvironment>();
     }
 }
 

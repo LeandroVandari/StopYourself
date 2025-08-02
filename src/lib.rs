@@ -1,17 +1,30 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 
+use crate::modes::GameMode;
+
 pub mod camera;
 pub mod environment;
+pub mod menu;
 pub mod modes;
 pub mod obstacles;
 pub mod player;
+
+#[derive(States, Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum GameState {
+    #[default]
+    Splash,
+    Menu,
+    Game,
+}
 
 pub struct SetupPlugin;
 
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PreStartup, Self::level_dimensions)
-            .add_systems(FixedPreUpdate, update_state);
+            .add_systems(FixedPreUpdate, update_state)
+            .init_state::<GameState>()
+            .init_state::<GameMode>();
     }
 }
 

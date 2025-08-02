@@ -1,6 +1,6 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 
-use crate::{LevelDimensions, modes::GameMode, player::Player};
+use crate::{GameState, LevelDimensions, modes::GameMode, player::Player};
 
 pub struct CameraPlugin;
 /// How many tiles ahead of the player the camera should be.
@@ -14,7 +14,8 @@ impl Plugin for CameraPlugin {
                 Self::follow_player
                     .run_if(in_state(GameMode::Survive).or(in_state(GameMode::Replay))),
                 Self::keyboard_input.run_if(in_state(GameMode::Defend)),
-            ),
+            )
+                .run_if(in_state(GameState::Game)),
         );
     }
 }

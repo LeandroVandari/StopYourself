@@ -1,0 +1,176 @@
+use bevy::prelude::*;
+
+use crate::GameState;
+
+pub struct MenuPlugin;
+
+#[derive(Debug, Component)]
+struct SplashMarker;
+#[derive(Debug, Component)]
+struct MainMenuMarker;
+
+#[derive(Resource, Deref, DerefMut)]
+struct SplashTimer(Timer);
+
+impl Plugin for MenuPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(OnEnter(GameState::Splash), Self::splash_screen)
+            .add_systems(Update, Self::countdown.run_if(in_state(GameState::Splash)))
+            .add_systems(OnExit(GameState::Splash), despawn_screen::<SplashMarker>)
+            .add_systems(OnEnter(GameState::Menu), Self::main_menu)
+            .add_systems(Update, Self::menu_action.run_if(in_state(GameState::Menu)))
+            .add_systems(OnExit(GameState::Menu), despawn_screen::<MainMenuMarker>);
+    }
+}
+
+#[derive(Component, Debug)]
+pub enum MenuButtonAction {
+    Play,
+    Exit,
+}
+
+const TITLE_FONT_PATH: &str = "fonts/title_font.ttf";
+const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
+const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
+
+impl MenuPlugin {
+    fn countdown(
+        mut game_state: ResMut<NextState<GameState>>,
+        time: Res<Time>,
+        mut timer: ResMut<SplashTimer>,
+    ) {
+        if timer.tick(time.delta()).finished() {
+            game_state.set(GameState::Menu);
+        }
+    }
+
+    fn splash_screen(mut commands: Commands, asset_server: Res<AssetServer>) {
+        commands.spawn((
+            SplashMarker,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..Default::default()
+            },
+            BackgroundColor(Color::srgb(0.4, 0.4, 0.4)),
+            children![(
+                Text::new("Stop Yourself!"),
+                TextFont {
+                    font: asset_server.load(TITLE_FONT_PATH),
+                    font_size: 80.,
+                    ..Default::default()
+                },
+                TextColor(TEXT_COLOR),
+                Node {
+                    margin: UiRect::all(Val::Px(50.0)),
+                    ..default()
+                },
+            )],
+        ));
+
+        commands.insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)));
+    }
+
+    fn main_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
+        let text_font = asset_server.load(TITLE_FONT_PATH);
+        let button_node = Node {
+            width: Val::Px(300.),
+            height: Val::Px(70.),
+            margin: UiRect::all(Val::Px(20.)),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..Default::default()
+        };
+
+        let button_text_font = TextFont {
+            font_size: 33.,
+            ..Default::default()
+        };
+
+        commands
+            .spawn((
+                Node {
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..Default::default()
+                },
+                MainMenuMarker,
+                BackgroundColor(Color::srgb(0.4, 0.4, 0.4)),
+            ))
+            .with_children(|parent| {
+                parent.spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        ..Default::default()
+                    },
+                    children![
+                        (
+                            Text::new("Stop Yourself!"),
+                            TextFont {
+                                font_size: 80.,
+                                font: text_font,
+                                ..Default::default()
+                            },
+                            TextColor(TEXT_COLOR),
+                            Node {
+                                margin: UiRect::all(Val::Px(50.)),
+                                ..Default::default()
+                            },
+                        ),
+                        (
+                            Button,
+                            button_node.clone(),
+                            BackgroundColor(NORMAL_BUTTON),
+                            MenuButtonAction::Play,
+                            children![(
+                                Text::new("Start!"),
+                                button_text_font.clone(),
+                                TextColor(TEXT_COLOR),
+                            )],
+                        ),
+                        (
+                            Button,
+                            button_node.clone(),
+                            BackgroundColor(NORMAL_BUTTON),
+                            MenuButtonAction::Exit,
+                            children![(
+                                Text::new("Exit"),
+                                button_text_font.clone(),
+                                TextColor(TEXT_COLOR),
+                            )],
+                        )
+                    ],
+                ));
+            });
+    }
+
+    fn menu_action(
+        action: Query<(&Interaction, &MenuButtonAction), (Changed<Interaction>, With<Button>)>,
+        mut app_exit_events: EventWriter<AppExit>,
+        mut app_state: ResMut<NextState<GameState>>,
+    ) {
+        for (interaction, menu_action) in action {
+            if *interaction == Interaction::Pressed {
+                match menu_action {
+                    MenuButtonAction::Exit => {
+                        app_exit_events.write(AppExit::Success);
+                    }
+                    MenuButtonAction::Play => {
+                        app_state.set(GameState::Game);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
+    for entity in &to_despawn {
+        commands.entity(entity).despawn();
+    }
+}
