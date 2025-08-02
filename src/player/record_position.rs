@@ -59,12 +59,6 @@ impl RecordPositionPlugin {
         mut player: Single<&mut Transform, With<Player>>,
     ) {
         let start_frame = recorded_positions.last_played_frame;
-        info!(
-            "{start_frame} -- {} -- {} ---- {:?}",
-            recorded_positions.frame_start,
-            frame_counter.0,
-            &recorded_positions.positions[0..3]
-        );
         let positions = recorded_positions.positions.clone();
         for position in positions
             .iter()
@@ -74,13 +68,6 @@ impl RecordPositionPlugin {
                 break;
             }
             player.translation = position.1;
-            info!(
-                "teleporting to {}, in frame {}",
-                player.translation, position.0
-            );
-            /* if position.0 == 0 {
-                dbg!(&recorded_positions.positions);
-            } */
 
             recorded_positions.last_played_frame = position.0 as usize;
         }
