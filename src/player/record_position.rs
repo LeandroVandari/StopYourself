@@ -62,17 +62,17 @@ impl RecordPositionPlugin {
         let start_frame = recorded_positions.last_played_frame;
         let mut last_played_frame = recorded_positions.last_played_frame;
 
-        for position in recorded_positions
+        for (frame, pos) in recorded_positions
             .positions
             .iter()
             .skip_while(|pos| pos.0 < start_frame as u32)
         {
-            if (frame_counter.0 - recorded_positions.frame_start) < position.0 {
+            if (frame_counter.0 - recorded_positions.frame_start) < *frame {
                 break;
             }
-            player.translation = position.1;
+            player.translation = *pos;
 
-            last_played_frame = position.0 as usize;
+            last_played_frame = *frame as usize;
         }
 
         recorded_positions.last_played_frame = last_played_frame;
