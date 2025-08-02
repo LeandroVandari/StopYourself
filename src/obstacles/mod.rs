@@ -3,6 +3,7 @@ use bevy::{
     diagnostic::FrameCount, input::common_conditions::input_just_pressed, prelude::*,
     window::PrimaryWindow,
 };
+use rand::prelude::*;
 
 use crate::{
     GameState,
@@ -50,7 +51,11 @@ impl SpawnGhostObstacleEvent {
     // TODO: make it actually random
     pub fn random() -> Self {
         Self {
-            obs_type: ObstacleType::Laser,
+            obs_type: if rand::random() {
+                ObstacleType::Laser
+            } else {
+                ObstacleType::Spike
+            },
         }
     }
 }
