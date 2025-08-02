@@ -1,4 +1,7 @@
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::{
+    prelude::*,
+    window::{PrimaryWindow, WindowResized},
+};
 
 use crate::modes::GameMode;
 
@@ -22,7 +25,8 @@ pub struct SetupPlugin;
 
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, Self::level_dimensions)
+        app.add_systems(PreStartup, Self::create_level_dimensions)
+            .add_systems(Update, Self::update_level_dimensions)
             .add_systems(FixedPreUpdate, update_state)
             .init_state::<GameState>()
             .init_state::<GameMode>();
@@ -43,12 +47,26 @@ pub struct LevelDimensions {
 }
 
 impl SetupPlugin {
-    fn level_dimensions(mut commands: Commands, window: Single<&Window, With<PrimaryWindow>>) {
+    fn create_level_dimensions(
+        mut commands: Commands,
+        window: Single<&Window, With<PrimaryWindow>>,
+    ) {
+        let level_length = 75;
         commands.insert_resource(LevelDimensions {
             start: window.size().map(|dimension| -dimension / 2.),
-            tile_size: 20.,
-            level_length: 75,
+            tile_size: window.size().x / level_length as f32,
+            level_length: level_length,
         });
+    }
+
+    fn update_level_dimensions(
+        mut resize_reader: EventReader<WindowResized>,
+        mut level_dimensions: ResMut<LevelDimensions>,
+    ) {
+        for new_size in resize_reader.read() {
+            level_dimensions.start = vec2(-new_size.width / 2., -new_size.height / 2.);
+            level_dimensions.tile_size = new_size.width / level_dimensions.level_length as f32
+        }
     }
 }
 

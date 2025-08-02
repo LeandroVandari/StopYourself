@@ -1,8 +1,5 @@
 use avian2d::prelude::*;
-use bevy::{
-    prelude::*,
-    window::{PresentMode, WindowResolution},
-};
+use bevy::{prelude::*, window::PresentMode};
 
 fn main() {
     App::new()
@@ -10,8 +7,8 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Stop yourself".into(),
-                    resolution: WindowResolution::new(1000., 600.),
                     present_mode: PresentMode::AutoNoVsync,
+                    mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
                     ..Default::default()
                 }),
                 ..Default::default()
