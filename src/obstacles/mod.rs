@@ -1,7 +1,11 @@
 use avian2d::prelude::*;
 use bevy::{input::common_conditions::input_just_pressed, prelude::*, window::PrimaryWindow};
 
-use crate::player::{Player, PlayerDeath};
+use crate::{
+    GameState,
+    modes::GameMode,
+    player::{Player, PlayerDeath},
+};
 
 #[derive(Debug)]
 pub enum ObstacleType {
@@ -44,12 +48,16 @@ impl Plugin for ObstaclePlugin {
                 (
                     Self::spawn_obstacle_ghost.run_if(on_event::<SpawnGhostObstacleEvent>),
                     Self::ghost_obstacle_follow_mouse,
-                ),
+                )
+                    .run_if(in_state(GameState::Game)),
             )
             .add_systems(
                 FixedPreUpdate,
                 Self::place_ghost_obs
-                    .run_if(input_just_pressed(MouseButton::Left))
+                    .run_if(
+                        input_just_pressed(MouseButton::Left)
+                            .and(in_state(GameMode::Defend).and(in_state(GameState::Game))),
+                    )
                     .before(crate::update_state),
             );
     }

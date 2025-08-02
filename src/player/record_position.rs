@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{modes::GameMode, player::Player};
+use crate::{GameState, modes::GameMode, player::Player};
 
 pub struct RecordPositionPlugin;
 
@@ -28,7 +28,8 @@ impl Plugin for RecordPositionPlugin {
         })
         .add_systems(
             FixedUpdate,
-            Self::record_position.run_if(in_state(GameMode::Survive)),
+            Self::record_position
+                .run_if(in_state(GameMode::Survive).and(in_state(GameState::Game))),
         );
     }
 }

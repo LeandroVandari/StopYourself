@@ -8,6 +8,7 @@ use avian2d::{
 use bevy::prelude::*;
 
 use crate::{
+    GameState,
     modes::GameMode,
     player::{Player, record_position::RecordPositionPlugin},
 };
@@ -28,7 +29,8 @@ impl Plugin for PlayerMovementPlugin {
                     .run_if(in_state(GameMode::Survive)))
                 .chain(),
                 RecordPositionPlugin::play_recorded_position.run_if(in_state(GameMode::Replay)),
-            ),
+            )
+                .run_if(in_state(GameState::Game)),
         )
         .add_event::<MovementAction>();
     }
