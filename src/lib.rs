@@ -29,10 +29,6 @@ impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PreStartup, Self::level_dimensions)
             .add_systems(FixedPreUpdate, update_state)
-            .add_systems(
-                Update,
-                handle_pause.run_if(input_just_pressed(KeyCode::Escape)),
-            )
             .init_state::<GameState>()
             .init_state::<GameMode>();
     }
@@ -41,30 +37,6 @@ impl Plugin for SetupPlugin {
 // Anything that can mutate state should run before this.
 fn update_state(world: &mut World) {
     world.try_run_schedule(StateTransition).unwrap();
-}
-
-fn handle_pause(
-    mut set_state: ResMut<NextState<GameState>>,
-    get_state: Res<State<GameState>>,
-    mut time: ResMut<Time<Virtual>>,
-    mut positions: ResMut<RecordedPositions>,
-    frame: Res<FrameCount>,
-) {
-    match get_state.get() {
-        GameState::Game => {
-            set_state.set(GameState::Paused {
-                frame_paused: frame.0,
-            });
-            time.pause();
-        }
-        GameState::Paused { frame_paused } => {
-            let frames_since_pause = frame.0 - frame_paused;
-            positions.frame_start += frames_since_pause;
-            set_state.set(GameState::Game);
-            time.unpause();
-        }
-        _ => (),
-    }
 }
 
 #[derive(Debug, Resource)]

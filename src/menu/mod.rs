@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 use crate::GameState;
 
+mod pause;
+
 pub struct MenuPlugin;
 
 #[derive(Debug, Component)]
@@ -14,7 +16,8 @@ struct SplashTimer(Timer);
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Splash), Self::splash_screen)
+        app.add_plugins(pause::PausePlugin)
+            .add_systems(OnEnter(GameState::Splash), Self::splash_screen)
             .add_systems(Update, Self::countdown.run_if(in_state(GameState::Splash)))
             .add_systems(OnExit(GameState::Splash), despawn_screen::<SplashMarker>)
             .add_systems(OnEnter(GameState::Menu), Self::main_menu)
