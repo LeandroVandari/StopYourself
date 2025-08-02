@@ -15,6 +15,7 @@ pub enum GameState {
     Splash,
     Menu,
     Game,
+    Paused,
 }
 
 pub struct SetupPlugin;

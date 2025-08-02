@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 use crate::GameState;
 
+mod pause;
+
 pub struct MenuPlugin;
 
 #[derive(Debug, Component)]
@@ -14,7 +16,8 @@ struct SplashTimer(Timer);
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Splash), Self::splash_screen)
+        app.add_plugins(pause::PausePlugin)
+            .add_systems(OnEnter(GameState::Splash), Self::splash_screen)
             .add_systems(Update, Self::countdown.run_if(in_state(GameState::Splash)))
             .add_systems(OnExit(GameState::Splash), despawn_screen::<SplashMarker>)
             .add_systems(OnEnter(GameState::Menu), Self::main_menu)
@@ -32,6 +35,9 @@ pub enum MenuButtonAction {
 const TITLE_FONT_PATH: &str = "fonts/title_font.ttf";
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
+const HOVERED_PRESSED_BUTTON: Color = Color::srgb(0.25, 0.65, 0.25);
+const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
 impl MenuPlugin {
     fn countdown(
@@ -59,7 +65,7 @@ impl MenuPlugin {
                 Text::new("Stop Yourself!"),
                 TextFont {
                     font: asset_server.load(TITLE_FONT_PATH),
-                    font_size: 80.,
+                    font_size: 100.,
                     ..Default::default()
                 },
                 TextColor(TEXT_COLOR),
@@ -81,6 +87,7 @@ impl MenuPlugin {
             margin: UiRect::all(Val::Px(20.)),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
+            border: UiRect::all(Val::Px(3.)),
             ..Default::default()
         };
 
@@ -112,7 +119,7 @@ impl MenuPlugin {
                         (
                             Text::new("Stop Yourself!"),
                             TextFont {
-                                font_size: 80.,
+                                font_size: 100.,
                                 font: text_font,
                                 ..Default::default()
                             },
@@ -127,6 +134,7 @@ impl MenuPlugin {
                             button_node.clone(),
                             BackgroundColor(NORMAL_BUTTON),
                             MenuButtonAction::Play,
+                            BorderColor(Color::BLACK),
                             children![(
                                 Text::new("Start!"),
                                 button_text_font.clone(),
@@ -137,6 +145,7 @@ impl MenuPlugin {
                             Button,
                             button_node.clone(),
                             BackgroundColor(NORMAL_BUTTON),
+                            BorderColor(Color::BLACK),
                             MenuButtonAction::Exit,
                             children![(
                                 Text::new("Exit"),
@@ -150,11 +159,14 @@ impl MenuPlugin {
     }
 
     fn menu_action(
-        action: Query<(&Interaction, &MenuButtonAction), (Changed<Interaction>, With<Button>)>,
+        action: Query<
+            (&Interaction, &MenuButtonAction, &mut BackgroundColor),
+            (Changed<Interaction>, With<Button>),
+        >,
         mut app_exit_events: EventWriter<AppExit>,
         mut app_state: ResMut<NextState<GameState>>,
     ) {
-        for (interaction, menu_action) in action {
+        for (interaction, menu_action, mut background_color) in action {
             if *interaction == Interaction::Pressed {
                 match menu_action {
                     MenuButtonAction::Exit => {
@@ -164,6 +176,12 @@ impl MenuPlugin {
                         app_state.set(GameState::Game);
                     }
                 }
+            }
+
+            *background_color = match interaction {
+                Interaction::None => NORMAL_BUTTON.into(),
+                Interaction::Pressed => PRESSED_BUTTON.into(),
+                Interaction::Hovered => HOVERED_BUTTON.into(),
             }
         }
     }
