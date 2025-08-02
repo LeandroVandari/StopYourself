@@ -15,9 +15,7 @@ pub enum GameState {
     Splash,
     Menu,
     Game,
-    Paused {
-        frame_paused: u32,
-    },
+    Paused,
 }
 
 pub struct SetupPlugin;
