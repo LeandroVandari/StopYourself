@@ -7,16 +7,7 @@ Get the highest possible score by beating your level as many times as you can.
 
 ## Running
 The game uses the Bevy Game Engine. To run, clone the repository and simply `cargo run`.
-### Developing
-- The `dynamic_linking` feature is enabled by default. It dramatically speeds up compile times. Make sure to set
-```toml
-[profile.dev.package."*"]
-opt-level=3
-```
-in your `Cargo.toml` (it's not set by default because I have it as a workspace configuration).
-- Since bevy is -- by default -- imported from the workspace, you might also want to update the `Cargo.toml` to have the actual bevy version
-(0.16.1).
-- You might also want to set the `default-features=false` flag for bevy, otherwise compilation might take a bit longer.
+
 ### Compiling to wasm
 Follow https://bevy-cheatbook.github.io/platforms/wasm.html
 ### Compiling to native executable
