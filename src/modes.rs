@@ -40,9 +40,11 @@ impl Plugin for ModesManagement {
         )
         .add_systems(
             FixedUpdate,
-            (Self::draw_player_ghost.run_if(in_state(GameMode::Defend)),),
+            (Self::draw_player_ghost
+                .run_if(in_state(GameMode::Defend).or(in_state(GameMode::Replay))),),
         )
-        .add_systems(OnEnter(GameMode::Replay), Self::replay)
+        .add_systems(OnEnter(GameMode::Replay), Self::reset_replay)
+        .add_systems(OnEnter(GameMode::Defend), Self::reset_replay)
         .init_state::<GameMode>()
         .add_event::<GoalReached>();
     }
@@ -54,6 +56,7 @@ impl ModesManagement {
             recorded_positions
                 .positions
                 .iter()
+                .skip_while(|(frame, _)| *frame < recorded_positions.last_played_frame as u32)
                 .map(|(_, pos)| pos.truncate()),
             Color::WHITE,
         );
@@ -100,7 +103,7 @@ impl ModesManagement {
         state.set(GameMode::Replay);
     }
 
-    fn replay(mut recorded_positions: ResMut<RecordedPositions>, frame: Res<FrameCount>) {
+    fn reset_replay(mut recorded_positions: ResMut<RecordedPositions>, frame: Res<FrameCount>) {
         info!("resetting frame_start");
         recorded_positions.frame_start = frame.0;
         recorded_positions.last_played_frame = 0;
