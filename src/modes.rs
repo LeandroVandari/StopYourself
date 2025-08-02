@@ -40,8 +40,10 @@ impl Plugin for ModesManagement {
         )
         .add_systems(
             FixedUpdate,
+
             (Self::draw_player_ghost
                 .run_if(in_state(GameMode::Defend).or(in_state(GameMode::Replay))),),
+
         )
         .add_systems(OnEnter(GameMode::Replay), Self::reset_replay)
         .add_systems(OnEnter(GameMode::Defend), Self::reset_replay)
@@ -56,7 +58,9 @@ impl ModesManagement {
             recorded_positions
                 .positions
                 .iter()
+
                 .skip_while(|(frame, _)| *frame < recorded_positions.last_played_frame as u32)
+
                 .map(|(_, pos)| pos.truncate()),
             Color::WHITE,
         );
