@@ -1,10 +1,7 @@
 use avian2d::prelude::*;
 use bevy::{input::common_conditions::input_just_pressed, prelude::*, window::PrimaryWindow};
 
-use crate::{
-    modes::GameMode,
-    player::{Player, PlayerDeath},
-};
+use crate::player::{Player, PlayerDeath};
 
 #[derive(Debug)]
 pub enum ObstacleType {
@@ -143,7 +140,6 @@ impl ObstaclePlugin {
     fn place_ghost_obs(
         mut commands: Commands,
         ghost_obs: Single<Entity, With<GhostObstacle>>,
-        mut state: ResMut<NextState<GameMode>>,
         previous_last_obstacle: Option<Single<Entity, With<LastInsertedObstacle>>>,
     ) {
         info!("Placing the ghost obstacle");

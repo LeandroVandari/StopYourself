@@ -5,11 +5,7 @@ use avian2d::{
     math::{AdjustPrecision, Scalar, Vector},
     prelude::*,
 };
-use bevy::{
-    diagnostic::FrameCount,
-    input::{common_conditions::input_just_released, mouse::MouseButtonInput},
-    prelude::*,
-};
+use bevy::prelude::*;
 
 use crate::{
     modes::GameMode,
