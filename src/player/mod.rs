@@ -26,7 +26,7 @@ impl Plugin for PlayerPlugin {
         ))
         .add_event::<ResetEnvironment>()
         .add_event::<PlayerDeath>()
-        .add_systems(OnEnter(GameState::Game), Self::spawn_player)
+        .add_systems(OnExit(GameState::Menu), Self::spawn_player)
         .add_systems(
             FixedUpdate,
             Self::move_to_start_pos.run_if(on_event::<ResetEnvironment>),
