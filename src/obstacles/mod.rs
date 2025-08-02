@@ -160,11 +160,31 @@ impl ObstaclePlugin {
                             |trigger: Trigger<OnCollisionStart>,
                              player_query: Query<(), With<Player>>,
                              mut death_writer: EventWriter<PlayerDeath>,
-                             ghost_query: Query<&GhostObstacle>| {
+                             ghost_query: Query<&GhostObstacle>,
+                             previous_last_obstacle: Option<
+                                Single<Entity, With<LastInsertedObstacle>>,
+                            >,
+                             game_mode: Res<State<GameMode>>| {
                                 let spike = trigger.target();
                                 // If we're still placing the spike
                                 if ghost_query.contains(spike) {
                                     return;
+                                }
+
+                                match game_mode.get() {
+                                    GameMode::Replay => {
+                                        // If we're hitting someone that wasn't the previous last obstacle,
+                                        // we should ignore that collision
+                                        if !(previous_last_obstacle.map_or(true, |obs| {
+                                            obs.into_inner() == trigger.target()
+                                        })) {
+                                            return;
+                                        }
+                                    }
+
+                                    _ => {
+                                        // do nothing
+                                    }
                                 }
 
                                 if player_query.contains(trigger.collider) {
@@ -194,11 +214,31 @@ impl ObstaclePlugin {
                             |trigger: Trigger<OnCollisionStart>,
                              player_query: Query<(), With<Player>>,
                              mut death_writer: EventWriter<PlayerDeath>,
-                             ghost_query: Query<&GhostObstacle>| {
+                             ghost_query: Query<&GhostObstacle>,
+                             previous_last_obstacle: Option<
+                                Single<Entity, With<LastInsertedObstacle>>,
+                            >,
+                             game_mode: Res<State<GameMode>>| {
                                 let laser = trigger.target();
                                 // If we're still placing the laser
                                 if ghost_query.contains(laser) {
                                     return;
+                                }
+
+                                match game_mode.get() {
+                                    GameMode::Replay => {
+                                        // If we're hitting someone that wasn't the previous last obstacle,
+                                        // we should ignore that collision
+                                        if !(previous_last_obstacle.map_or(true, |obs| {
+                                            obs.into_inner() == trigger.target()
+                                        })) {
+                                            return;
+                                        }
+                                    }
+
+                                    _ => {
+                                        // do nothing
+                                    }
                                 }
 
                                 if player_query.contains(trigger.collider) {
