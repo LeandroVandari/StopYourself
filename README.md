@@ -10,6 +10,10 @@ The game uses the Bevy Game Engine. To run, clone the repository and simply `car
 
 ### Compiling to wasm
 Follow https://bevy-cheatbook.github.io/platforms/wasm.html
+#### Optimizing wasm:
+`wasm-opt -Os --output optimized.wasm wasm32-unknown-unknown/release/gmtk.wasm`
+#### Generating bindings:
+`wasm-bindgen --out-name game --target web  optimized.wasm --out-dir game`
 ### Compiling to native executable
 Remove the `dynamic_linking` flag from the bevy features, and make sure to pass the `--release` flag to cargo.
 Recommended release profile:
