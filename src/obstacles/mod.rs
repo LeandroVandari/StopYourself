@@ -1,14 +1,12 @@
-use avian2d::prelude::*;
-use bevy::{
-    diagnostic::FrameCount, input::common_conditions::input_just_pressed, prelude::*,
-    window::PrimaryWindow,
-};
-use rand::prelude::*;
-
 use crate::{
     GameState,
     modes::GameMode,
     player::{Player, PlayerDeath, record_position::RecordedPositions},
+};
+use avian2d::prelude::*;
+use bevy::{
+    diagnostic::FrameCount, ecs::entity_disabling::Disabled,
+    input::common_conditions::input_just_pressed, prelude::*, window::PrimaryWindow,
 };
 
 #[derive(Debug, Component)]
@@ -94,26 +92,30 @@ impl Plugin for ObstaclePlugin {
 
 impl ObstaclePlugin {
     fn flicker_on_frames(
+        mut commands: Commands,
         frame_counter: Res<FrameCount>,
         recorded_positions: Res<RecordedPositions>,
-        query: Query<(&mut Transform, &mut Flicker)>,
+        query: Query<(Entity, &mut Transform, &mut Flicker, Has<Disabled>)>,
+        asset_server: Res<AssetServer>,
     ) {
         let start_frame = recorded_positions.frame_start;
         if frame_counter.0 < start_frame {
             return;
         }
-        for (mut transform, mut flicker) in query {
+        for (entity, transform, mut flicker, is_disabled) in query {
             let frame_for_flicker =
                 (frame_counter.0 - start_frame + flicker.delay) % flicker.period;
             if frame_for_flicker < flicker.duration {
-                if transform.translation != Vec3::X * 10_000. {
+                if !is_disabled {
                     flicker.original_position = transform.translation;
+                    continue;
                 }
-                transform.translation = flicker.original_position;
+                commands.spawn(AudioPlayer::new(asset_server.load("sounds/laser.wav")));
+                commands.entity(entity).remove::<Disabled>();
             } else {
-                if transform.translation != Vec3::X * 10_000. {
+                if !is_disabled {
                     flicker.original_position = transform.translation;
-                    transform.translation = Vec3::X * 10_000.;
+                    commands.entity(entity).insert(Disabled);
                 }
             }
         }
@@ -224,14 +226,6 @@ impl ObstaclePlugin {
 
         let inner_window = window.into_inner();
 
-        if obs_transform.translation == Vec3::X * 10_000. {
-            obs_transform.translation =
-                get_cursor_world_pos(inner_window, camera, camera_transform)
-                    .map_or(obs_transform.translation, |pos| {
-                        pos.extend(obs_transform.translation.z)
-                    });
-        }
-
         let mut target_translation = get_cursor_world_pos(inner_window, camera, camera_transform)
             .map_or(obs_transform.translation, |pos| {
                 pos.extend(obs_transform.translation.z)
@@ -253,9 +247,11 @@ impl ObstaclePlugin {
 
     fn place_ghost_obs(
         mut commands: Commands,
+        asset_server: Res<AssetServer>,
         ghost_obs: Single<Entity, With<GhostObstacle>>,
         previous_last_obstacle: Option<Single<Entity, With<LastInsertedObstacle>>>,
     ) {
+        commands.spawn(AudioPlayer::new(asset_server.load("sounds/click.wav")));
         info!("Placing the ghost obstacle");
         if let Some(obs) = previous_last_obstacle {
             commands

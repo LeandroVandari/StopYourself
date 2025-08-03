@@ -159,6 +159,8 @@ impl MenuPlugin {
     }
 
     fn menu_action(
+        mut commands: Commands,
+        asset_server: Res<AssetServer>,
         action: Query<
             (&Interaction, &MenuButtonAction, &mut BackgroundColor),
             (Changed<Interaction>, With<Button>),
@@ -168,6 +170,13 @@ impl MenuPlugin {
     ) {
         for (interaction, menu_action, mut background_color) in action {
             if *interaction == Interaction::Pressed {
+                commands.spawn((
+                    AudioPlayer::new(asset_server.load("sounds/button_select.wav")),
+                    PlaybackSettings {
+                        volume: bevy::audio::Volume::Linear(0.5),
+                        ..Default::default()
+                    },
+                ));
                 match menu_action {
                     MenuButtonAction::Exit => {
                         app_exit_events.write(AppExit::Success);
@@ -176,6 +185,10 @@ impl MenuPlugin {
                         app_state.set(GameState::Game);
                     }
                 }
+            } else if *interaction == Interaction::Hovered {
+                commands.spawn((AudioPlayer::new(
+                    asset_server.load("sounds/button_hover.wav"),
+                ),));
             }
 
             *background_color = match interaction {

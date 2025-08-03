@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 avian2d = { version = "0.3.1", features = ["enhanced-determinism"] }
-bevy = { version="0.16.1", default-features=false, features = [
+bevy = { workspace = true, features = [
     "multi_threaded",
     "bevy_window",
     "bevy_winit",
@@ -29,9 +29,9 @@ bevy = { version="0.16.1", default-features=false, features = [
     "tonemapping_luts",
     "webgl2",
     "dynamic_linking",
+    "hdr",
+    "vorbis",
+    "wav",
 ] }
 bevy_framepace = "0.19.1"
-
-[profile.dev.package."*"]
-opt-level=3
-debug=false
+rand = "0.9.2"

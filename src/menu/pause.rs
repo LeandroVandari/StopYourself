@@ -60,7 +60,7 @@ impl PausePlugin {
         }
     }
 
-    fn spawn_pause_menu(mut commands: Commands, asset_server: ResMut<AssetServer>) {
+    fn spawn_pause_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
         let title_font = asset_server.load(super::TITLE_FONT_PATH);
 
         let button_node = Node {
@@ -135,6 +135,8 @@ impl PausePlugin {
     }
 
     fn pause_menu_action(
+        mut commands: Commands,
+        asset_server: Res<AssetServer>,
         action: Query<
             (&Interaction, &MenuButtonAction, &mut BackgroundColor),
             (Changed<Interaction>, With<Button>),
@@ -148,6 +150,9 @@ impl PausePlugin {
     ) {
         for (interaction, menu_action, mut background_color) in action {
             if *interaction == Interaction::Pressed {
+                commands.spawn(AudioPlayer::new(
+                    asset_server.load("sounds/button_select.wav"),
+                ));
                 match menu_action {
                     MenuButtonAction::Exit => {
                         app_exit_events.write(AppExit::Success);
@@ -162,6 +167,10 @@ impl PausePlugin {
                         );
                     }
                 }
+            } else if *interaction == Interaction::Hovered {
+                commands.spawn((AudioPlayer::new(
+                    asset_server.load("sounds/button_hover.wav"),
+                ),));
             }
 
             *background_color = match interaction {

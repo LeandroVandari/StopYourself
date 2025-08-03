@@ -5,7 +5,10 @@ use crate::{
     GameState, LevelDimensions,
     environment::ResetEnvironment,
     modes::GameMode,
-    player::{movement::CharacterControllerBundle, record_position::RecordedPositions},
+    player::{
+        movement::{CharacterControllerBundle, MovementAction},
+        record_position::RecordedPositions,
+    },
 };
 
 /// Player died
@@ -91,7 +94,11 @@ impl PlayerPlugin {
         mut reset_environment: EventWriter<ResetEnvironment>,
 
         mut recorded_positions: ResMut<RecordedPositions>,
+
+        asset_server: Res<AssetServer>,
+        mut commands: Commands,
     ) {
+        commands.spawn(AudioPlayer::new(asset_server.load("sounds/death.wav")));
         match game_mode.get() {
             GameMode::Survive => {
                 info!("Player died in survive mode. Restarting mode.");

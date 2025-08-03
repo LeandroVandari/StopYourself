@@ -29,7 +29,8 @@ impl Plugin for SetupPlugin {
             .add_systems(Update, Self::update_level_dimensions)
             .add_systems(FixedPreUpdate, update_state)
             .init_state::<GameState>()
-            .init_state::<GameMode>();
+            .init_state::<GameMode>()
+            .init_asset::<AudioSource>();
     }
 }
 
