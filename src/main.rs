@@ -9,13 +9,14 @@ fn main() {
                     title: "Stop yourself".into(),
                     present_mode: PresentMode::AutoNoVsync,
                     mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
+                    fit_canvas_to_parent: true,
                     ..Default::default()
                 }),
                 ..Default::default()
             }),
             PhysicsPlugins::default().with_length_unit(20.),
             bevy_framepace::FramepacePlugin,
-            // PhysicsDebugPlugin::default(),
+            //PhysicsDebugPlugin::default(),
         ))
         .add_plugins((
             gmtk::SetupPlugin,

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+getrandom = { version = "0.3.3", features = ["wasm_js"] }
 avian2d = { version = "0.3.1", features = ["enhanced-determinism"] }
 bevy = { workspace = true, features = [
     "multi_threaded",
@@ -28,10 +29,10 @@ bevy = { workspace = true, features = [
     "bevy_asset",
     "tonemapping_luts",
     "webgl2",
-    "dynamic_linking",
+    #"dynamic_linking",
     "hdr",
     "vorbis",
     "wav",
 ] }
 bevy_framepace = "0.19.1"
-rand = "0.9.2"
+rand = { version = "0.9.2" }
