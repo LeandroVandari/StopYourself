@@ -268,7 +268,7 @@ impl ObstaclePlugin {
                 ObstacleType::Laser => {
                     commands.spawn((
                         Mesh2d(meshes.add(Rectangle {
-                            half_size: vec2(40., 1000.),
+                            half_size: vec2(20., 1000.),
                         })),
                         MeshMaterial2d(materials.add(ColorMaterial {
                             color: Color::srgb(1.0, 0.2, 0.3).with_alpha(0.2),
@@ -284,9 +284,9 @@ impl ObstaclePlugin {
                             ObstacleType::Laser,
                             CollisionEventsEnabled,
                             Sensor,
-                            Collider::rectangle(60.0, 1000.0),
+                            Collider::rectangle(30.0, 1000.0),
                             Mesh2d(meshes.add(Rectangle {
-                                half_size: vec2(40., 10_000.),
+                                half_size: vec2(20., 10_000.),
                             })),
                             Flicker {
                                 period: 120,
