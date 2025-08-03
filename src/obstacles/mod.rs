@@ -40,8 +40,6 @@ pub struct Flicker {
     delay: u32,
     /// How long this appears for, in frames
     duration: u32,
-    /// first frame to strike
-    strike_frame: u32,
 }
 
 #[derive(Debug, Event)]
@@ -144,9 +142,7 @@ impl ObstaclePlugin {
                 *visibility = Visibility::Hidden;
                 return;
             }
-            if ((frame_for_flicker + flicker.delay) % flicker.period) < flicker.duration
-                || (frame_for_flicker == flicker.delay && flicker.strike_frame < flicker.period)
-            {
+            if ((frame_for_flicker - flicker.delay) % flicker.period) < flicker.duration {
                 if !is_disabled {
                     continue;
                 }
@@ -295,7 +291,6 @@ impl ObstaclePlugin {
                                 period: 120,
                                 delay: 120,
                                 duration: 20,
-                                strike_frame: 10000,
                             },
                         ))
                         .observe(
@@ -396,31 +391,6 @@ impl ObstaclePlugin {
         }
         let entity = ghost_obs.into_inner();
         let mut obs_entity = commands.entity(entity);
-
-        if let Ok((mut flicker, pos, rot, col)) = flicker_query.get_mut(entity) {
-            let position_where_player_is_in_laser = positions
-                .positions
-                .iter()
-                .filter(|(_, p, _)| col.contains_point(*pos, *rot, p.truncate()))
-                .collect::<Vec<_>>();
-            let period = flicker.period;
-            let delay = position_where_player_is_in_laser
-                .get(if position_where_player_is_in_laser.len() != 0 {
-                    rand::random_range(0..position_where_player_is_in_laser.len())
-                } else {
-                    1
-                })
-                .map_or(120, |(frame, _p, _)| {
-                    flicker.strike_frame = *frame;
-                    info!("Will strike player in frame {frame}, when they're in position {_p}");
-                    if *frame > period {
-                        frame.next_multiple_of(period) - frame
-                    } else {
-                        *frame
-                    }
-                });
-            flicker.delay = delay;
-        }
 
         obs_entity.remove::<GhostObstacle>();
         obs_entity.insert(LastInsertedObstacle);
