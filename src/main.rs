@@ -15,7 +15,7 @@ fn main() {
             }),
             PhysicsPlugins::default().with_length_unit(20.),
             bevy_framepace::FramepacePlugin,
-            PhysicsDebugPlugin::default(),
+            // PhysicsDebugPlugin::default(),
         ))
         .add_plugins((
             gmtk::SetupPlugin,
