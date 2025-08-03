@@ -5,7 +5,11 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{GameState, modes::GameMode, player::Player};
+use crate::{
+    GameState,
+    modes::GameMode,
+    player::{Player, movement::ActualJump},
+};
 
 pub struct RecordPositionPlugin;
 
@@ -13,7 +17,7 @@ pub struct RecordPositionPlugin;
 pub struct RecordedPositions {
     /// Which frame the positions started being recorded in
     pub(crate) frame_start: u32,
-    pub(crate) positions: Vec<(u32, Vec3)>, // (Frame of the position, position)
+    pub(crate) positions: Vec<(u32, Vec3, bool)>, // (Frame of the position, position, player jumped)
     pub(crate) last_played_frame: usize,
     pub(crate) locked: bool,
 }
@@ -39,6 +43,8 @@ impl RecordPositionPlugin {
         position: Single<&Transform, With<Player>>,
         mut recorded_positions: ResMut<RecordedPositions>,
         frame_counter: Res<FrameCount>,
+
+        mut jump_reader: EventReader<ActualJump>,
     ) {
         if recorded_positions.locked {
             return;
@@ -49,20 +55,24 @@ impl RecordPositionPlugin {
             // recorded_positions.last_played_frame = 0;
         }
         let frame_from_start = frame_counter.0 - recorded_positions.frame_start;
-        recorded_positions
-            .positions
-            .push((frame_from_start, position.translation))
+        recorded_positions.positions.push((
+            frame_from_start,
+            position.translation,
+            jump_reader.read().next().is_some(),
+        ))
     }
 
     pub fn play_recorded_position(
         mut recorded_positions: ResMut<RecordedPositions>,
         frame_counter: Res<FrameCount>,
         mut player: Single<&mut Transform, With<Player>>,
+        mut commands: Commands,
+        asset_server: Res<AssetServer>,
     ) {
         let start_frame = recorded_positions.last_played_frame;
         let mut last_played_frame = recorded_positions.last_played_frame;
 
-        for (frame, pos) in recorded_positions
+        for (frame, pos, jumped) in recorded_positions
             .positions
             .iter()
             .skip_while(|pos| pos.0 < start_frame as u32)
@@ -70,6 +80,16 @@ impl RecordPositionPlugin {
             if (frame_counter.0 - recorded_positions.frame_start) < *frame {
                 break;
             }
+            if *jumped {
+                commands.spawn((
+                    AudioPlayer::new(asset_server.load("sounds/jump.wav")),
+                    PlaybackSettings {
+                        volume: bevy::audio::Volume::Linear(0.5),
+                        ..Default::default()
+                    },
+                ));
+            }
+
             player.translation = *pos;
 
             last_played_frame = *frame as usize;

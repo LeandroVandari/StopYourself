@@ -1,14 +1,13 @@
-use avian2d::prelude::*;
-use bevy::{
-    diagnostic::FrameCount, input::common_conditions::input_just_pressed, prelude::*,
-    window::PrimaryWindow,
-};
-use rand::prelude::*;
-
 use crate::{
     GameState,
     modes::GameMode,
     player::{Player, PlayerDeath, record_position::RecordedPositions},
+};
+use avian2d::prelude::*;
+use bevy::{
+    diagnostic::FrameCount, ecs::entity_disabling::Disabled,
+    input::common_conditions::input_just_pressed, prelude::*, sprite::AlphaMode2d,
+    window::PrimaryWindow,
 };
 
 #[derive(Debug, Component)]
@@ -20,6 +19,10 @@ pub enum ObstacleType {
 /// Marker component for obstacles
 #[derive(Debug, Component)]
 pub struct ObstacleMarker;
+
+/// Marker component for the shadow of a laser
+#[derive(Debug, Component)]
+pub struct FakeLaser;
 
 /// mark the last inserted obstacle to allow the player to move it
 #[derive(Debug, Component)]
@@ -39,7 +42,6 @@ pub struct Flicker {
     duration: u32,
     // the original position of the object
     // (we flicker objects by physically placing them far away)
-    original_position: Vec3,
 }
 
 #[derive(Debug, Event)]
@@ -47,11 +49,17 @@ pub struct SpawnGhostObstacleEvent {
     obs_type: ObstacleType,
 }
 
+#[derive(Debug, Event)]
+pub struct EmitLaserPositionEvent {
+    position: Vec2,
+}
+
 impl SpawnGhostObstacleEvent {
     // TODO: make it actually random
     pub fn random() -> Self {
+        let random = rand::random_range(0.0..1.0);
         Self {
-            obs_type: if rand::random::<bool>() {
+            obs_type: if random < 0.3 {
                 ObstacleType::Laser
             } else {
                 ObstacleType::Spike
@@ -65,6 +73,7 @@ pub struct ObstaclePlugin;
 impl Plugin for ObstaclePlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SpawnGhostObstacleEvent>()
+            .add_event::<EmitLaserPositionEvent>()
             .add_systems(
                 Update,
                 (
@@ -88,34 +97,97 @@ impl Plugin for ObstaclePlugin {
                     (in_state(GameMode::Replay).or(in_state(GameMode::Survive)))
                         .and(in_state(GameState::Game)),
                 ),
+            )
+            .add_systems(
+                FixedUpdate,
+                Self::force_disable.run_if(
+                    (in_state(GameMode::Defend).or(on_event::<PlayerDeath>))
+                        .and(in_state(GameState::Game)),
+                ),
+            )
+            .add_systems(FixedPreUpdate, Self::emit_real_laser_pos)
+            .add_systems(
+                FixedUpdate,
+                Self::follow_real_laser_pos.run_if(on_event::<EmitLaserPositionEvent>),
             );
     }
 }
 
 impl ObstaclePlugin {
+    fn force_disable(
+        mut commands: Commands,
+        query: Query<(Entity, &mut Visibility), With<Flicker>>,
+    ) {
+        for (entity, mut visibility) in query {
+            commands.entity(entity).insert(ColliderDisabled);
+            *visibility = Visibility::Hidden;
+        }
+    }
     fn flicker_on_frames(
+        mut commands: Commands,
         frame_counter: Res<FrameCount>,
         recorded_positions: Res<RecordedPositions>,
-        query: Query<(&mut Transform, &mut Flicker)>,
+        query: Query<(
+            Entity,
+            &mut Transform,
+            &mut Flicker,
+            &mut Visibility,
+            Has<ColliderDisabled>,
+        )>,
+        asset_server: Res<AssetServer>,
     ) {
         let start_frame = recorded_positions.frame_start;
-        if frame_counter.0 < start_frame {
-            return;
-        }
-        for (mut transform, mut flicker) in query {
-            let frame_for_flicker =
-                (frame_counter.0 - start_frame + flicker.delay) % flicker.period;
-            if frame_for_flicker < flicker.duration {
-                if transform.translation != Vec3::X * 10_000. {
-                    flicker.original_position = transform.translation;
+        for (entity, transform, mut flicker, mut visibility, is_disabled) in query {
+            let frame_for_flicker = frame_counter.0 - start_frame;
+            if frame_counter.0 < start_frame || frame_for_flicker < flicker.delay {
+                commands.entity(entity).insert(ColliderDisabled);
+                *visibility = Visibility::Hidden;
+                return;
+            }
+
+            if (frame_for_flicker % flicker.period) < flicker.duration {
+                if !is_disabled {
+                    continue;
                 }
-                transform.translation = flicker.original_position;
+                commands.spawn(AudioPlayer::new(asset_server.load("sounds/laser.wav")));
+                commands.entity(entity).remove::<ColliderDisabled>();
+                *visibility = Visibility::Visible;
             } else {
-                if transform.translation != Vec3::X * 10_000. {
-                    flicker.original_position = transform.translation;
-                    transform.translation = Vec3::X * 10_000.;
+                if !is_disabled {
+                    commands.entity(entity).insert(ColliderDisabled);
+                    *visibility = Visibility::Hidden;
                 }
             }
+        }
+    }
+
+    fn emit_real_laser_pos(
+        query: Query<(&Transform, &ObstacleType)>,
+        mut laser_pos_event: EventWriter<EmitLaserPositionEvent>,
+    ) {
+        for (transform, obstacle_type) in query {
+            match obstacle_type {
+                ObstacleType::Laser => {
+                    laser_pos_event.write(EmitLaserPositionEvent {
+                        position: transform.translation.truncate(),
+                    });
+                }
+                _ => {
+                    // do nothing
+                }
+            }
+        }
+    }
+
+    fn follow_real_laser_pos(
+        mut laser_pos_event: EventReader<EmitLaserPositionEvent>,
+        query: Query<&mut Transform, With<FakeLaser>>,
+    ) {
+        for mut transform in query {
+            transform.translation = laser_pos_event.read().next().map_or(
+                transform.translation,
+                |EmitLaserPositionEvent { position }| position.extend(0.),
+            );
         }
     }
 
@@ -175,6 +247,19 @@ impl ObstaclePlugin {
                         );
                 }
                 ObstacleType::Laser => {
+                    commands.spawn((
+                        Mesh2d(meshes.add(Rectangle {
+                            half_size: vec2(40., 1000.),
+                        })),
+                        MeshMaterial2d(materials.add(ColorMaterial {
+                            color: Color::srgb(1.0, 0.2, 0.3).with_alpha(0.2),
+                            alpha_mode: AlphaMode2d::Blend,
+                            ..default()
+                        })),
+                        Transform::from_translation(cursor_pos.extend(0.)),
+                        FakeLaser,
+                    ));
+
                     commands
                         .spawn((
                             common_components,
@@ -183,13 +268,12 @@ impl ObstaclePlugin {
                             Sensor,
                             Collider::rectangle(60.0, 1000.0),
                             Mesh2d(meshes.add(Rectangle {
-                                half_size: vec2(40., 1000.),
+                                half_size: vec2(40., 10_000.),
                             })),
                             Flicker {
-                                period: 100,
-                                delay: rand::random_range(0..50),
-                                duration: 40,
-                                original_position: Vec3::ZERO,
+                                period: 120,
+                                delay: 120,
+                                duration: 20,
                             },
                         ))
                         .observe(
@@ -224,14 +308,6 @@ impl ObstaclePlugin {
 
         let inner_window = window.into_inner();
 
-        if obs_transform.translation == Vec3::X * 10_000. {
-            obs_transform.translation =
-                get_cursor_world_pos(inner_window, camera, camera_transform)
-                    .map_or(obs_transform.translation, |pos| {
-                        pos.extend(obs_transform.translation.z)
-                    });
-        }
-
         let mut target_translation = get_cursor_world_pos(inner_window, camera, camera_transform)
             .map_or(obs_transform.translation, |pos| {
                 pos.extend(obs_transform.translation.z)
@@ -253,9 +329,11 @@ impl ObstaclePlugin {
 
     fn place_ghost_obs(
         mut commands: Commands,
+        asset_server: Res<AssetServer>,
         ghost_obs: Single<Entity, With<GhostObstacle>>,
         previous_last_obstacle: Option<Single<Entity, With<LastInsertedObstacle>>>,
     ) {
+        commands.spawn(AudioPlayer::new(asset_server.load("sounds/click.wav")));
         info!("Placing the ghost obstacle");
         if let Some(obs) = previous_last_obstacle {
             commands

@@ -1,9 +1,12 @@
-use bevy::{diagnostic::FrameCount, input::common_conditions::input_pressed, prelude::*};
+use bevy::{
+    diagnostic::FrameCount, ecs::entity_disabling::Disabled,
+    input::common_conditions::input_pressed, prelude::*,
+};
 
 use crate::{
     GameState,
     environment::ResetEnvironment,
-    obstacles::{GhostObstacle, LastInsertedObstacle, SpawnGhostObstacleEvent},
+    obstacles::{Flicker, GhostObstacle, LastInsertedObstacle, SpawnGhostObstacleEvent},
     player::record_position::{RecordPositionPlugin, RecordedPositions},
 };
 
@@ -30,7 +33,7 @@ impl Plugin for ModesManagement {
             FixedPreUpdate,
             (
                 (
-                    Self::handle_flag_reached,
+                    (Self::handle_flag_reached).chain(),
                     RecordPositionPlugin::record_position.run_if(in_state(GameMode::Survive)),
                 )
                     .run_if(on_event::<GoalReached>),
@@ -60,8 +63,8 @@ impl ModesManagement {
             recorded_positions
                 .positions
                 .iter()
-                .skip_while(|(frame, _)| *frame < recorded_positions.last_played_frame as u32)
-                .map(|(_, pos)| pos.truncate()),
+                .skip_while(|(frame, _, _)| *frame < recorded_positions.last_played_frame as u32)
+                .map(|(_, pos, _)| pos.truncate()),
             Color::WHITE,
         );
     }

@@ -32,7 +32,8 @@ impl Plugin for PlayerMovementPlugin {
             )
                 .run_if(in_state(GameState::Game)),
         )
-        .add_event::<MovementAction>();
+        .add_event::<MovementAction>()
+        .add_event::<ActualJump>();
     }
 }
 
@@ -74,6 +75,9 @@ struct MovementBundle {
     damping: MovementDampingFactor,
     jump_impulse: JumpImpulse,
 }
+
+#[derive(Event)]
+pub struct ActualJump;
 
 impl MovementBundle {
     pub const fn new(acceleration: Scalar, damping: Scalar, jump_impulse: Scalar) -> Self {
@@ -157,6 +161,10 @@ impl PlayerMovementPlugin {
     }
 
     fn movement(
+        mut commands: Commands,
+        asset_server: Res<AssetServer>,
+        mut jump_writer: EventWriter<ActualJump>,
+
         time: Res<Time>,
         mut movement_event_reader: EventReader<MovementAction>,
         mut controllers: Query<(
@@ -181,6 +189,14 @@ impl PlayerMovementPlugin {
                     MovementAction::Jump => {
                         if is_grounded {
                             linear_velocity.y = jump_impulse.0;
+                            commands.spawn((
+                                AudioPlayer::new(asset_server.load("sounds/jump.wav")),
+                                PlaybackSettings {
+                                    volume: bevy::audio::Volume::Linear(0.5),
+                                    ..Default::default()
+                                },
+                            ));
+                            jump_writer.write(ActualJump);
                         } else if linear_velocity.y > 0.0 {
                             linear_velocity.y += jump_impulse.0 * 0.05;
                         }
