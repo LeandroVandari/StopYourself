@@ -33,7 +33,7 @@ impl Plugin for ModesManagement {
             FixedPreUpdate,
             (
                 (
-                    (Self::enable_flicker, Self::handle_flag_reached).chain(),
+                    (Self::handle_flag_reached).chain(),
                     RecordPositionPlugin::record_position.run_if(in_state(GameMode::Survive)),
                 )
                     .run_if(on_event::<GoalReached>),
@@ -99,14 +99,6 @@ impl ModesManagement {
         }
     }
 
-    fn enable_flicker(
-        mut commands: Commands,
-        flickers: Query<Entity, (With<Flicker>, With<Disabled>)>,
-    ) {
-        for flicker in flickers {
-            commands.entity(flicker).remove::<Disabled>();
-        }
-    }
     fn handle_replay(
         ghost_obs_query: Option<Single<&GhostObstacle>>,
         mut state: ResMut<NextState<GameMode>>,

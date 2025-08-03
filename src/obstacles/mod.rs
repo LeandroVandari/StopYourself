@@ -42,7 +42,6 @@ pub struct Flicker {
     duration: u32,
     // the original position of the object
     // (we flicker objects by physically placing them far away)
-    original_position: Vec3,
 }
 
 #[derive(Debug, Event)]
@@ -58,8 +57,9 @@ pub struct EmitLaserPositionEvent {
 impl SpawnGhostObstacleEvent {
     // TODO: make it actually random
     pub fn random() -> Self {
+        let random = rand::random_range(0.0..1.0);
         Self {
-            obs_type: if rand::random::<bool>() {
+            obs_type: if random < 0.3 {
                 ObstacleType::Laser
             } else {
                 ObstacleType::Spike
@@ -98,6 +98,13 @@ impl Plugin for ObstaclePlugin {
                         .and(in_state(GameState::Game)),
                 ),
             )
+            .add_systems(
+                FixedUpdate,
+                Self::force_disable.run_if(
+                    (in_state(GameMode::Defend).or(on_event::<PlayerDeath>))
+                        .and(in_state(GameState::Game)),
+                ),
+            )
             .add_systems(FixedPreUpdate, Self::emit_real_laser_pos)
             .add_systems(
                 FixedUpdate,
@@ -107,6 +114,15 @@ impl Plugin for ObstaclePlugin {
 }
 
 impl ObstaclePlugin {
+    fn force_disable(
+        mut commands: Commands,
+        query: Query<(Entity, &mut Visibility), With<Flicker>>,
+    ) {
+        for (entity, mut visibility) in query {
+            commands.entity(entity).insert(ColliderDisabled);
+            *visibility = Visibility::Hidden;
+        }
+    }
     fn flicker_on_frames(
         mut commands: Commands,
         frame_counter: Res<FrameCount>,
@@ -121,15 +137,16 @@ impl ObstaclePlugin {
         asset_server: Res<AssetServer>,
     ) {
         let start_frame = recorded_positions.frame_start;
-        if frame_counter.0 < start_frame {
-            return;
-        }
         for (entity, transform, mut flicker, mut visibility, is_disabled) in query {
-            let frame_for_flicker =
-                (frame_counter.0 - start_frame + flicker.delay) % flicker.period;
-            if frame_for_flicker < flicker.duration {
+            let frame_for_flicker = frame_counter.0 - start_frame;
+            if frame_counter.0 < start_frame || frame_for_flicker < flicker.delay {
+                commands.entity(entity).insert(ColliderDisabled);
+                *visibility = Visibility::Hidden;
+                return;
+            }
+
+            if (frame_for_flicker % flicker.period) < flicker.duration {
                 if !is_disabled {
-                    flicker.original_position = transform.translation;
                     continue;
                 }
                 commands.spawn(AudioPlayer::new(asset_server.load("sounds/laser.wav")));
@@ -137,7 +154,6 @@ impl ObstaclePlugin {
                 *visibility = Visibility::Visible;
             } else {
                 if !is_disabled {
-                    flicker.original_position = transform.translation;
                     commands.entity(entity).insert(ColliderDisabled);
                     *visibility = Visibility::Hidden;
                 }
@@ -252,13 +268,12 @@ impl ObstaclePlugin {
                             Sensor,
                             Collider::rectangle(60.0, 1000.0),
                             Mesh2d(meshes.add(Rectangle {
-                                half_size: vec2(40., 1000.),
+                                half_size: vec2(40., 10_000.),
                             })),
                             Flicker {
                                 period: 120,
-                                delay: 0,
+                                delay: 120,
                                 duration: 20,
-                                original_position: Vec3::ZERO,
                             },
                         ))
                         .observe(
