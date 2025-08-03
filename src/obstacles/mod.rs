@@ -11,7 +11,7 @@ use crate::{
     player::{Player, PlayerDeath, record_position::RecordedPositions},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub enum ObstacleType {
     Spike,
     Laser,
@@ -149,12 +149,13 @@ impl ObstaclePlugin {
                             common_components,
                             CollisionEventsEnabled,
                             Sensor,
-                            Collider::triangle(vec2(-20.0, 0.0), vec2(20.0, 0.0), vec2(0.0, 40.0)),
+                            Collider::triangle(vec2(-14.0, 0.0), vec2(14.0, 0.0), vec2(0.0, 28.0)),
                             Mesh2d(meshes.add(Triangle2d::new(
                                 vec2(-20.0, 0.0),
                                 vec2(20.0, 0.0),
                                 vec2(0.0, 40.0),
                             ))),
+                            ObstacleType::Spike,
                         ))
                         .observe(
                             |trigger: Trigger<OnCollisionStart>,
@@ -177,9 +178,10 @@ impl ObstaclePlugin {
                     commands
                         .spawn((
                             common_components,
+                            ObstacleType::Laser,
                             CollisionEventsEnabled,
                             Sensor,
-                            Collider::rectangle(40.0, 1000.0),
+                            Collider::rectangle(60.0, 1000.0),
                             Mesh2d(meshes.add(Rectangle {
                                 half_size: vec2(40., 1000.),
                             })),
@@ -214,26 +216,31 @@ impl ObstaclePlugin {
     /// Similar to the camera tracking to the player, it lags a bit behind.
     fn ghost_obstacle_follow_mouse(
         window: Single<&Window, With<PrimaryWindow>>,
-        mut ghost_obs: Single<&mut Transform, With<GhostObstacle>>,
+        ghost_obs: Single<(&mut Transform, &ObstacleType), With<GhostObstacle>>,
         camera: Single<(&Camera, &GlobalTransform), With<Camera2d>>,
     ) {
+        let (mut obs_transform, obs_type) = ghost_obs.into_inner();
         let (camera, camera_transform) = camera.into_inner();
 
         let inner_window = window.into_inner();
 
-        if ghost_obs.translation == Vec3::X * 10_000. {
-            ghost_obs.translation = get_cursor_world_pos(inner_window, camera, camera_transform)
-                .map_or(ghost_obs.translation, |pos| {
-                    pos.extend(ghost_obs.translation.z)
-                });
+        if obs_transform.translation == Vec3::X * 10_000. {
+            obs_transform.translation =
+                get_cursor_world_pos(inner_window, camera, camera_transform)
+                    .map_or(obs_transform.translation, |pos| {
+                        pos.extend(obs_transform.translation.z)
+                    });
         }
 
-        let target_translation = get_cursor_world_pos(inner_window, camera, camera_transform)
-            .map_or(ghost_obs.translation, |pos| {
-                pos.extend(ghost_obs.translation.z)
+        let mut target_translation = get_cursor_world_pos(inner_window, camera, camera_transform)
+            .map_or(obs_transform.translation, |pos| {
+                pos.extend(obs_transform.translation.z)
             });
+        if matches!(obs_type, ObstacleType::Laser) {
+            target_translation = target_translation.with_y(0.)
+        }
 
-        let diff = target_translation - ghost_obs.translation;
+        let diff = target_translation - obs_transform.translation;
         let diff_length = diff.length();
         if diff_length <= 0.1 {
             return;
@@ -241,7 +248,7 @@ impl ObstaclePlugin {
 
         let dir = diff.clone().normalize();
 
-        ghost_obs.translation += dir * f32::min(50., diff_length);
+        obs_transform.translation += dir * f32::min(50., diff_length);
     }
 
     fn place_ghost_obs(

@@ -86,14 +86,11 @@ impl PlayerPlugin {
     }
 
     fn handle_death(
-        mut commands: Commands,
         game_mode: Res<State<GameMode>>,
         mut state: ResMut<NextState<GameMode>>,
         mut reset_environment: EventWriter<ResetEnvironment>,
 
         mut recorded_positions: ResMut<RecordedPositions>,
-
-        asset_server: Res<AssetServer>,
     ) {
         match game_mode.get() {
             GameMode::Survive => {
@@ -103,23 +100,6 @@ impl PlayerPlugin {
             }
             GameMode::Replay => {
                 info!("Player died in replay mode. Moving on to survive.");
-                commands.spawn((
-                    Text::new("Congrats!\nYou Killed Yourself"),
-                    TextFont {
-                        // This font is just a placeholder, feel free to change :)
-                        font: asset_server.load("fonts/Yeti Sighting.ttf"),
-                        font_size: 67.,
-                        ..Default::default()
-                    },
-                    TextLayout::new_with_justify(JustifyText::Center),
-                    Node {
-                        position_type: PositionType::Absolute,
-                        left: Val::Percent(0.5),
-                        top: Val::Percent(0.2),
-                        right: Val::Percent(0.5),
-                        ..Default::default()
-                    },
-                ));
                 state.set(GameMode::Survive);
                 recorded_positions.positions.clear();
                 recorded_positions.locked = true;
