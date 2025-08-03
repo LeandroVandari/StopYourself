@@ -51,7 +51,7 @@ impl SpawnGhostObstacleEvent {
     // TODO: make it actually random
     pub fn random() -> Self {
         Self {
-            obs_type: if rand::random() {
+            obs_type: if rand::random::<bool>() {
                 ObstacleType::Laser
             } else {
                 ObstacleType::Spike
