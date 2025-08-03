@@ -1,4 +1,11 @@
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::{
+    core_pipeline::{
+        bloom::Bloom,
+        tonemapping::{DebandDither, Tonemapping},
+    },
+    prelude::*,
+    window::PrimaryWindow,
+};
 
 use crate::{GameState, LevelDimensions, modes::GameMode, player::Player};
 
@@ -22,7 +29,19 @@ impl Plugin for CameraPlugin {
 
 impl CameraPlugin {
     fn spawn_camera(mut commands: Commands) {
-        commands.spawn(Camera2d);
+        let mut bloom = Bloom::OLD_SCHOOL;
+        bloom.low_frequency_boost = 0.5;
+        bloom.intensity = 0.1;
+        commands.spawn((
+            Camera2d,
+            Camera {
+                hdr: true,
+                ..Default::default()
+            },
+            Tonemapping::BlenderFilmic,
+            bloom,
+            DebandDither::Enabled,
+        ));
     }
 
     /// Follow the player smoothly
