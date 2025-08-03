@@ -60,7 +60,7 @@ impl MenuPlugin {
                 justify_content: JustifyContent::Center,
                 ..Default::default()
             },
-            BackgroundColor(Color::srgb(0.4, 0.4, 0.4)),
+            BackgroundColor(Color::srgb(0., 0., 0.)),
             children![(
                 Text::new("Stop Yourself!"),
                 TextFont {
@@ -108,7 +108,7 @@ impl MenuPlugin {
                     ..Default::default()
                 },
                 MainMenuMarker,
-                BackgroundColor(Color::srgb(0.4, 0.4, 0.4)),
+                BackgroundColor(Color::srgb(0., 0., 0.)),
             ))
             .with_children(|parent| {
                 parent.spawn((
