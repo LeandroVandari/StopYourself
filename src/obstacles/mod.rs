@@ -34,14 +34,12 @@ pub struct GhostObstacle;
 
 #[derive(Debug, Component)]
 pub struct Flicker {
-    // How many frames between each appearance start, in frames
+    /// How many frames between each appearance start, in frames
     period: u32,
-    // How long until this appears for the first time, in frames
+    /// How long until this appears for the first time, in frames
     delay: u32,
-    // How long this appears for, in frames
+    /// How long this appears for, in frames
     duration: u32,
-    // the original position of the object
-    // (we flicker objects by physically placing them far away)
 }
 
 #[derive(Debug, Event)]
@@ -59,7 +57,7 @@ impl SpawnGhostObstacleEvent {
     pub fn random() -> Self {
         let random = rand::random_range(0.0..1.0);
         Self {
-            obs_type: if random < 0.3 {
+            obs_type: if random < 0.4 {
                 ObstacleType::Laser
             } else {
                 ObstacleType::Spike
@@ -145,7 +143,7 @@ impl ObstaclePlugin {
                 return;
             }
 
-            if (frame_for_flicker % flicker.period) < flicker.duration {
+            if ((frame_for_flicker + flicker.delay) % flicker.period) < flicker.duration {
                 if !is_disabled {
                     continue;
                 }
@@ -198,6 +196,7 @@ impl ObstaclePlugin {
         camera: Single<(&Camera, &GlobalTransform, &Transform), With<Camera2d>>,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<ColorMaterial>>,
+        positions: ResMut<RecordedPositions>,
     ) {
         let (camera, camera_global_transform, camera_transform) = camera.into_inner();
 
@@ -279,7 +278,6 @@ impl ObstaclePlugin {
                         Transform::from_translation(cursor_pos.extend(0.)),
                         FakeLaser,
                     ));
-
                     commands
                         .spawn((
                             common_components,
@@ -372,6 +370,10 @@ impl ObstaclePlugin {
         asset_server: Res<AssetServer>,
         ghost_obs: Single<Entity, With<GhostObstacle>>,
         previous_last_obstacle: Option<Single<Entity, With<LastInsertedObstacle>>>,
+
+        mut flicker_query: Query<(&mut Flicker, &Position, &Rotation, &Collider)>,
+
+        positions: Res<RecordedPositions>,
     ) {
         commands.spawn(AudioPlayer::new(asset_server.load("sounds/click.wav")));
         info!("Placing the ghost obstacle");
@@ -380,8 +382,30 @@ impl ObstaclePlugin {
                 .entity(obs.into_inner())
                 .remove::<LastInsertedObstacle>();
         }
+        let entity = ghost_obs.into_inner();
+        let mut obs_entity = commands.entity(entity);
 
-        let mut obs_entity = commands.entity(ghost_obs.into_inner());
+        if let Ok((mut flicker, pos, rot, col)) = flicker_query.get_mut(entity) {
+            let position_where_player_is_in_laser = positions
+                .positions
+                .iter()
+                .filter(|(_, p, _)| col.contains_point(*pos, *rot, p.truncate()))
+                .collect::<Vec<_>>();
+            let period = flicker.period;
+            let delay = position_where_player_is_in_laser
+                .get(rand::random_range(
+                    0..position_where_player_is_in_laser.len(),
+                ))
+                .map_or(120, |(frame, _p, _)| {
+                    info!("Will strike player in frame {frame}, when they're in position {_p}");
+                    if *frame > period {
+                        frame.next_multiple_of(period) - frame
+                    } else {
+                        *frame
+                    }
+                });
+            flicker.delay = delay;
+        }
         obs_entity.remove::<GhostObstacle>();
         obs_entity.insert(LastInsertedObstacle);
     }
