@@ -40,6 +40,8 @@ pub struct Flicker {
     delay: u32,
     /// How long this appears for, in frames
     duration: u32,
+    /// first frame to strike
+    strike_frame: u32,
 }
 
 #[derive(Debug, Event)]
@@ -57,7 +59,7 @@ impl SpawnGhostObstacleEvent {
     pub fn random() -> Self {
         let random = rand::random_range(0.0..1.0);
         Self {
-            obs_type: if random < 0.4 {
+            obs_type: if random < 0.35 {
                 ObstacleType::Laser
             } else {
                 ObstacleType::Spike
@@ -142,8 +144,9 @@ impl ObstaclePlugin {
                 *visibility = Visibility::Hidden;
                 return;
             }
-
-            if ((frame_for_flicker + flicker.delay) % flicker.period) < flicker.duration {
+            if ((frame_for_flicker + flicker.delay) % flicker.period) < flicker.duration
+                || (frame_for_flicker == flicker.delay && flicker.strike_frame < flicker.period)
+            {
                 if !is_disabled {
                     continue;
                 }
@@ -292,6 +295,7 @@ impl ObstaclePlugin {
                                 period: 120,
                                 delay: 120,
                                 duration: 20,
+                                strike_frame: 10000,
                             },
                         ))
                         .observe(
@@ -391,10 +395,13 @@ impl ObstaclePlugin {
                 .collect::<Vec<_>>();
             let period = flicker.period;
             let delay = position_where_player_is_in_laser
-                .get(rand::random_range(
-                    0..position_where_player_is_in_laser.len(),
-                ))
+                .get(if position_where_player_is_in_laser.len() != 0 {
+                    rand::random_range(0..position_where_player_is_in_laser.len())
+                } else {
+                    1
+                })
                 .map_or(120, |(frame, _p, _)| {
+                    flicker.strike_frame = *frame;
                     info!("Will strike player in frame {frame}, when they're in position {_p}");
                     if *frame > period {
                         frame.next_multiple_of(period) - frame
