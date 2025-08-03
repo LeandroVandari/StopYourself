@@ -80,7 +80,8 @@ impl MenuPlugin {
     }
 
     fn main_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
-        let text_font = asset_server.load(TITLE_FONT_PATH);
+        let title_font = asset_server.load(TITLE_FONT_PATH);
+
         let button_node = Node {
             width: Val::Px(300.),
             height: Val::Px(70.),
@@ -93,6 +94,7 @@ impl MenuPlugin {
 
         let button_text_font = TextFont {
             font_size: 33.,
+            font: asset_server.load("fonts/capitolcity.ttf"),
             ..Default::default()
         };
 
@@ -120,7 +122,7 @@ impl MenuPlugin {
                             Text::new("Stop Yourself!"),
                             TextFont {
                                 font_size: 100.,
-                                font: text_font,
+                                font: title_font,
                                 ..Default::default()
                             },
                             TextColor(TEXT_COLOR),

@@ -74,6 +74,7 @@ impl PausePlugin {
 
         let button_text_font = TextFont {
             font_size: 33.,
+            font: asset_server.load("fonts/capitolcity.ttf"),
             ..Default::default()
         };
 

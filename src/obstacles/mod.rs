@@ -377,7 +377,17 @@ impl ObstaclePlugin {
         mut flicker_query: Query<(&mut Flicker, &Position, &Rotation, &Collider)>,
 
         positions: Res<RecordedPositions>,
+        asset_server: Res<AssetServer>,
     ) {
+        commands.spawn((
+            Text::new("Press [SPACE] to continue..."),
+            SpaceToContinueMarker,
+            TextFont {
+                font_size: 30.,
+                font: asset_server.load("fonts/capitolcity.ttf"),
+                ..Default::default()
+            },
+        ));
         info!("Placing the ghost obstacle");
         if let Some(obs) = previous_last_obstacle {
             commands
@@ -411,11 +421,13 @@ impl ObstaclePlugin {
                 });
             flicker.delay = delay;
         }
+
         obs_entity.remove::<GhostObstacle>();
         obs_entity.insert(LastInsertedObstacle);
     }
 }
-
+#[derive(Component)]
+pub struct SpaceToContinueMarker;
 pub fn get_cursor_world_pos(
     window: &Window,
 

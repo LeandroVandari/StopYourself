@@ -6,7 +6,10 @@ use bevy::{
 use crate::{
     GameState,
     environment::ResetEnvironment,
-    obstacles::{Flicker, GhostObstacle, LastInsertedObstacle, SpawnGhostObstacleEvent},
+    obstacles::{
+        Flicker, GhostObstacle, LastInsertedObstacle, SpaceToContinueMarker,
+        SpawnGhostObstacleEvent,
+    },
     player::record_position::{RecordPositionPlugin, RecordedPositions},
 };
 
@@ -103,11 +106,14 @@ impl ModesManagement {
 
     fn handle_replay(
         ghost_obs_query: Option<Single<&GhostObstacle>>,
+        text_space: Single<Entity, With<SpaceToContinueMarker>>,
         mut state: ResMut<NextState<GameMode>>,
+        mut commands: Commands,
     ) {
         if ghost_obs_query.is_some() {
             return;
         }
+        commands.entity(text_space.into_inner()).despawn();
 
         state.set(GameMode::Replay);
     }
