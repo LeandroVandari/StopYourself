@@ -189,13 +189,8 @@ impl PlayerMovementPlugin {
                     MovementAction::Jump => {
                         if is_grounded {
                             linear_velocity.y = jump_impulse.0;
-                            commands.spawn((
-                                AudioPlayer::new(asset_server.load("sounds/jump.wav")),
-                                PlaybackSettings {
-                                    volume: bevy::audio::Volume::Linear(0.5),
-                                    ..Default::default()
-                                },
-                            ));
+                            commands
+                                .spawn((AudioPlayer::new(asset_server.load("sounds/jump.wav")),));
                             jump_writer.write(ActualJump);
                         } else if linear_velocity.y > 0.0 {
                             linear_velocity.y += jump_impulse.0 * 0.05;

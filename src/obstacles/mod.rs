@@ -367,7 +367,6 @@ impl ObstaclePlugin {
 
     fn place_ghost_obs(
         mut commands: Commands,
-        asset_server: Res<AssetServer>,
         ghost_obs: Single<Entity, With<GhostObstacle>>,
         previous_last_obstacle: Option<Single<Entity, With<LastInsertedObstacle>>>,
 
@@ -375,7 +374,6 @@ impl ObstaclePlugin {
 
         positions: Res<RecordedPositions>,
     ) {
-        commands.spawn(AudioPlayer::new(asset_server.load("sounds/click.wav")));
         info!("Placing the ghost obstacle");
         if let Some(obs) = previous_last_obstacle {
             commands

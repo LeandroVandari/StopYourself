@@ -81,13 +81,7 @@ impl RecordPositionPlugin {
                 break;
             }
             if *jumped {
-                commands.spawn((
-                    AudioPlayer::new(asset_server.load("sounds/jump.wav")),
-                    PlaybackSettings {
-                        volume: bevy::audio::Volume::Linear(0.5),
-                        ..Default::default()
-                    },
-                ));
+                commands.spawn((AudioPlayer::new(asset_server.load("sounds/jump.wav")),));
             }
 
             player.translation = *pos;

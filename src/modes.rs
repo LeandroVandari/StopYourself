@@ -75,8 +75,10 @@ impl ModesManagement {
         mut spawn_obstacle_writer: EventWriter<SpawnGhostObstacleEvent>,
         mode: Res<State<GameMode>>,
 
+        asset_server: Res<AssetServer>,
         last_placed_obstacle: Option<Single<Entity, With<LastInsertedObstacle>>>,
     ) {
+        commands.spawn(AudioPlayer::new(asset_server.load("sounds/flag.ogg")));
         match mode.get() {
             GameMode::Survive => {
                 info!("flag reached in survive mode");

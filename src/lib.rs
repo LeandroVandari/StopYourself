@@ -25,12 +25,15 @@ pub struct SetupPlugin;
 
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, Self::create_level_dimensions)
-            .add_systems(Update, Self::update_level_dimensions)
-            .add_systems(FixedPreUpdate, update_state)
-            .init_state::<GameState>()
-            .init_state::<GameMode>()
-            .init_asset::<AudioSource>();
+        app.add_systems(
+            PreStartup,
+            (Self::create_level_dimensions, Self::start_background_music),
+        )
+        .add_systems(Update, Self::update_level_dimensions)
+        .add_systems(FixedPreUpdate, update_state)
+        .init_state::<GameState>()
+        .init_state::<GameMode>()
+        .init_asset::<AudioSource>();
     }
 }
 
@@ -68,6 +71,12 @@ impl SetupPlugin {
             level_dimensions.start = vec2(-new_size.width / 2., -new_size.height / 2.);
             level_dimensions.tile_size = new_size.width / level_dimensions.level_length as f32
         }
+    }
+    fn start_background_music(mut asset_server: Res<AssetServer>, mut commands: Commands) {
+        commands.spawn((
+            AudioPlayer::new(asset_server.load("sounds/bg_music.wav")),
+            PlaybackSettings::LOOP.with_volume(bevy::audio::Volume::Linear(0.5)),
+        ));
     }
 }
 
